@@ -7,3 +7,10 @@
 # '#', and empty lines are ignored. If there are multiple kernel variants
 # with different initramfs module requirements, one modules-initfs.$variant
 # file should be created for each of them.
+on init
+    write /proc/sys/kernel/hung_task_timeout_secs 0
+
+    setprop sys.usb.configfs 1
+
+    write /sys/class/graphics/fb0/blank 1
+    write /sys/class/graphics/fb0/blank 0
