@@ -1,0 +1,124 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/(CHANGEME!)
+
+pkgname=linux-samsung-gta4xlwifi
+pkgver=4.14.356
+pkgrel=0
+pkgdesc="samsung galaxy tab s6 lite wifi kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-gta4xl"
+url="https://github.com/LineageOS/android_kernel_samsung_gta4xl.git"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+
+makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+	gettext-dev
+	clang19
+	mdp
+	dtbtool
+	linux-headers
+	android-tools
+	dtc
+
+"
+
+# Source
+_repository="android_kernel_samsung_gta4xl"
+_commit="df7598e4aabe7efc26c0a37871b8ee4d72dc8acb"
+_config="config-samsung-gta4xlwifi.aarch64"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	remove-header-lkc.patch
+	fix-dtb-generation.patch
+	01-fix-dtb_jxelte.patch
+	exynos9611.cfg
+	exynos9610.dtb
+	fix-check-lxdialog.patch
+	fix-check-lxdialog-makefile.patch
+
+
+
+
+
+	
+"
+#09-build-dtb.patch
+#	05_dtb-fix.patch
+#	0004-build-dtb.patch
+#0003-Change-dtb-config-variable.patch
+#03_add-missing-dtbs.patch
+#arm64-boot-disable-building-DTBO-images.patch
+#arm64-dts-Add-dtbs_install-make-target.patch
+#gcc7-give-up-on-ilog2-const-optimizations.patch
+#gcc8-fix-put-user.patch	
+#gcc10-extern_YYLOC_global_declaration.patch
+#kernel-use-the-gnu89-standard-explicitly.patch
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	REPLACE_GCCH=0
+	export CC="clang-19"
+	export HOSTCC="clang-19"
+	. downstreamkernel_prepare
+	# Remove -Werror from all makefiles
+	local i
+	local makefiles="$(find . -type f -name Makefile)
+	    $(find . -type f -name Kbuild)"
+	for i in $makefiles; do
+	    sed -i 's/-Werror-/-W/g' "$i"
+	    sed -i 's/-Werror//g' "$i"
+	done
+}
+
+build() {
+	unset LDFLAGS
+	install -Dm644 "$srcdir/exynos9610.dtb" \
+		"$pkgdir/boot/dtbs/exynos/exynos9610.dtb"
+
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+	make dtbs O="$_outdir" DTC_EXT=dtc ARCH="$_carch" CC="${CC:-gcc}"
+
+	ls "$_outdir"/arch/"$_carch"/boot/dts/samsung
+
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+
+	#make dtbs_install O="$_outdir" ARCH="$_carch" \
+		#INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+
+
+	install -Dm644 "$srcdir/exynos9610.dtb" \
+		"$pkgdir/boot/dtbs/exynos/exynos9610.dtb"
+
+
+
+}
+
+
+sha512sums="
+1c99d6fa65e37ffebcbe03cc86e1fbedbc52b706b6f53c5cabb827467af46cfb0b3fd1eff589faf712b5bb34163dd18e7c60749e99fdbc30cd89d80194655f06  linux-samsung-gta4xlwifi-df7598e4aabe7efc26c0a37871b8ee4d72dc8acb.tar.gz
+bb4152cc4782c33907ed6d167e2bccca098082638702207172e4098920b5238f3eb1980ca751004b53cfe947811082f296927104ace30b391fe41bb261599353  config-samsung-gta4xlwifi.aarch64
+1872a4d9963f128965ab46b329d448e6b776d373cf99f2b8e11d025aa3e10a0308da19beb715c6bdced0b2c6ef44c47a5c013554a19787a64f8ac58d34bc912f  remove-header-lkc.patch
+a7df8f35a946f68120fa9165089477b56e36458472fe5f5e3305093a91eede2aac36845bf20876886db9956e4c4f65c851f286089860efef86fc0fce3f3906cb  fix-dtb-generation.patch
+f10b3ddf297144739c8538bfb7998f19d8aec65e458e8dbe6ef400ffd9dfa845f042f481902dd0d38c97b2cc9c431db7722bccfbdf46bb6d340810bb981a8918  01-fix-dtb_jxelte.patch
+b9919a1010caf6cce9dbee0d3afa8e0b3c0794299d29d778d1ed822b6719a11c2b3ed08808ec5a641fe4a44a635370c0d85451fafdc62396a562fcaf02e5a9b6  exynos9611.cfg
+10bc76a756f470fb8d31079827afe7d1579e9f0f28da31de791d1997615845fe21481721d91becd7caae6d50ab1241c09ac98da4186973bf954a722f6ce4443e  exynos9610.dtb
+182be3c596b9cc267ac108d7cf03fc8c328ccc6b36770800e4dcedea8d1bb65e3f5eacf590c2948f58b1418cc60a1670ba77dde8c259e428d158c31b6e1dbaf5  fix-check-lxdialog.patch
+c33fad9de627e72f12e61e728fa1ec53ef15259c7790392a997cc7269e60e45da9534d58851c3b348a1729aaa134d1df305e33546e8a1f3654462f2c3c1d9563  fix-check-lxdialog-makefile.patch
+"
