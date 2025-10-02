@@ -42,7 +42,6 @@ source="
 	fix-dtb-generation.patch
 	01-fix-dtb_jxelte.patch
 	exynos9611.cfg
-	exynos9610.dtb
 	fix-check-lxdialog.patch
 	fix-check-lxdialog-makefile.patch
 
@@ -50,7 +49,7 @@ source="
 
 
 
-	
+
 "
 #09-build-dtb.patch
 #	05_dtb-fix.patch
@@ -60,7 +59,7 @@ source="
 #arm64-boot-disable-building-DTBO-images.patch
 #arm64-dts-Add-dtbs_install-make-target.patch
 #gcc7-give-up-on-ilog2-const-optimizations.patch
-#gcc8-fix-put-user.patch	
+#gcc8-fix-put-user.patch
 #gcc10-extern_YYLOC_global_declaration.patch
 #kernel-use-the-gnu89-standard-explicitly.patch
 builddir="$srcdir/$_repository-$_commit"
@@ -84,12 +83,12 @@ prepare() {
 
 build() {
 	unset LDFLAGS
-	install -Dm644 "$srcdir/exynos9610.dtb" \
-		"$pkgdir/boot/dtbs/exynos/exynos9610.dtb"
+	#install -Dm644 "$srcdir/exynos9610.dtb" \
+		#"$pkgdir/boot/dtbs/exynos/exynos9610.dtb"
 
 	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
 		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
-	make dtbs O="$_outdir" DTC_EXT=dtc ARCH="$_carch" CC="${CC:-gcc}"
+	make dtbs O="$_outdir" DTC_EXT=dtc ARCH="$_carch" CC="${CC:-gcc}" V=1
 
 	ls "$_outdir"/arch/"$_carch"/boot/dts/samsung
 
@@ -99,12 +98,12 @@ package() {
 	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
 		"$_flavor" "$_outdir"
 
-	#make dtbs_install O="$_outdir" ARCH="$_carch" \
-		#INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	make dtbs_install O="$_outdir" ARCH="$_carch" \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
 
 
-	install -Dm644 "$srcdir/exynos9610.dtb" \
-		"$pkgdir/boot/dtbs/exynos/exynos9610.dtb"
+	#install -Dm644 "$srcdir/exynos9610.dtb" \
+		#"$pkgdir/boot/dtbs/exynos/exynos9610.dtb"
 
 
 
@@ -118,7 +117,6 @@ e0df2dccf8fc6175ae34a9d946b9b041b960e34cfc5b09a6d6d453e20283711d59a95e0d8b0138b2
 a7df8f35a946f68120fa9165089477b56e36458472fe5f5e3305093a91eede2aac36845bf20876886db9956e4c4f65c851f286089860efef86fc0fce3f3906cb  fix-dtb-generation.patch
 f10b3ddf297144739c8538bfb7998f19d8aec65e458e8dbe6ef400ffd9dfa845f042f481902dd0d38c97b2cc9c431db7722bccfbdf46bb6d340810bb981a8918  01-fix-dtb_jxelte.patch
 b9919a1010caf6cce9dbee0d3afa8e0b3c0794299d29d778d1ed822b6719a11c2b3ed08808ec5a641fe4a44a635370c0d85451fafdc62396a562fcaf02e5a9b6  exynos9611.cfg
-10bc76a756f470fb8d31079827afe7d1579e9f0f28da31de791d1997615845fe21481721d91becd7caae6d50ab1241c09ac98da4186973bf954a722f6ce4443e  exynos9610.dtb
 182be3c596b9cc267ac108d7cf03fc8c328ccc6b36770800e4dcedea8d1bb65e3f5eacf590c2948f58b1418cc60a1670ba77dde8c259e428d158c31b6e1dbaf5  fix-check-lxdialog.patch
 c33fad9de627e72f12e61e728fa1ec53ef15259c7790392a997cc7269e60e45da9534d58851c3b348a1729aaa134d1df305e33546e8a1f3654462f2c3c1d9563  fix-check-lxdialog-makefile.patch
 "
