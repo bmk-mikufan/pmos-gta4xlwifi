@@ -1,0 +1,35 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-gta4xlwifi
+pkgdesc="samsung galaxy tab s6 lite wifi"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-samsung-gta4xlwifi
+	mkbootimg
+	postmarketos-base
+	msm-fb-refresher
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+}
+
+sha512sums="
+2fdb2502d0dffdf3d0eedad21f2e41de5624ca505e6650276b0825bb874f5480e0cea2ea7268b582c5631ec76ad52ed2a0fe0475119c57cfe5cd1bb3c4f96e17  deviceinfo
+e70bae17df23dcaaaea0e2d3616556f04baa23f8ee1357785c0f539bf97282d8ddff53953e155b72689bb73beb38c2da3d08de2a61e866684edfa10a6593885d  modules-initfs
+"
