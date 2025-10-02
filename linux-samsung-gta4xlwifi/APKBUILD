@@ -34,7 +34,7 @@ makedepends="
 # Source
 _repository="android_kernel_samsung_gta4xl"
 _commit="df7598e4aabe7efc26c0a37871b8ee4d72dc8acb"
-_config="config-samsung-gta4xlwifi.aarch64"
+_config="config-samsung-gta4xl.aarch64"
 source="
 	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
 	$_config
@@ -113,7 +113,7 @@ package() {
 
 sha512sums="
 1c99d6fa65e37ffebcbe03cc86e1fbedbc52b706b6f53c5cabb827467af46cfb0b3fd1eff589faf712b5bb34163dd18e7c60749e99fdbc30cd89d80194655f06  linux-samsung-gta4xlwifi-df7598e4aabe7efc26c0a37871b8ee4d72dc8acb.tar.gz
-bb4152cc4782c33907ed6d167e2bccca098082638702207172e4098920b5238f3eb1980ca751004b53cfe947811082f296927104ace30b391fe41bb261599353  config-samsung-gta4xlwifi.aarch64
+dcaa9d183e954b15fd0889bd942cb54faa1b2722e5fe5d8eae230edc728550f0904f74fec1c4ccc4bffe586dc264557ff253f7f75308bab9c12d67f07116148c  config-samsung-gta4xl.aarch64
 1872a4d9963f128965ab46b329d448e6b776d373cf99f2b8e11d025aa3e10a0308da19beb715c6bdced0b2c6ef44c47a5c013554a19787a64f8ac58d34bc912f  remove-header-lkc.patch
 a7df8f35a946f68120fa9165089477b56e36458472fe5f5e3305093a91eede2aac36845bf20876886db9956e4c4f65c851f286089860efef86fc0fce3f3906cb  fix-dtb-generation.patch
 f10b3ddf297144739c8538bfb7998f19d8aec65e458e8dbe6ef400ffd9dfa845f042f481902dd0d38c97b2cc9c431db7722bccfbdf46bb6d340810bb981a8918  01-fix-dtb_jxelte.patch
