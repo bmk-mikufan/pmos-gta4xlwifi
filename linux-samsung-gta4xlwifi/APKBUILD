@@ -44,6 +44,7 @@ source="
 	exynos9611.cfg
 	fix-check-lxdialog.patch
 	fix-check-lxdialog-makefile.patch
+	
 
 
 
@@ -91,6 +92,7 @@ build() {
 	make dtbs O="$_outdir" DTC_EXT=dtc ARCH="$_carch" CC="${CC:-gcc}" V=1
 	
 	ls "$_outdir"/arch/"$_carch"/boot/dts/samsung
+	ls "$_outdir"/arch/"$_carch"/boot/dts/exynos
 
 }
 
@@ -98,12 +100,12 @@ package() {
 	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
 		"$_flavor" "$_outdir"
 
-	make dtbs_install O="$_outdir" ARCH="$_carch" \
-		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	#make dtbs_install O="$_outdir" ARCH="$_carch" \
+		#INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
 
 
-	#install -Dm644 "$srcdir/exynos9610.dtb" \
-		#"$pkgdir/boot/dtbs/exynos/exynos9610.dtb"
+	install -Dm644 "$_outdir"/arch/"$_carch"/boot/dts/exynos/exynos9610.dtb \
+		"$pkgdir/boot/dtbs/exynos/exynos9610.dtb"
 
 
 
