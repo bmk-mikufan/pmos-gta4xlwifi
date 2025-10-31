@@ -103,8 +103,8 @@ package() {
 	#make dtbs_install O="$_outdir" ARCH="$_carch" \
 		#INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
 
-
-	install -Dm644 "$_outdir"/arch/"$_carch"/boot/dts/exynos/exynos9610.dtb \
+	#cp "$_outdir"/arch/"$_carch"/boot/dts/exynos/exynos9610.dtb "$builddir"/
+	install -Dm644 '"$_outdir"/arch/"$_carch"/boot/dts/exynos/exynos9610.dtb' \
 		"$pkgdir/boot/dtbs/exynos/exynos9610.dtb"
 
 
