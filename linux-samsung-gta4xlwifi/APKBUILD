@@ -44,6 +44,9 @@ source="
 	exynos9611.cfg
 	fix-check-lxdialog.patch
 	fix-check-lxdialog-makefile.patch
+	05-add-dts-make.patch
+	fix_kernel_genheaders.patch
+	fix_dts_headers.path
 	
 
 
@@ -104,7 +107,7 @@ package() {
 		#INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
 
 	#cp "$_outdir"/arch/"$_carch"/boot/dts/exynos/exynos9610.dtb "$builddir"/
-	install -Dm644 '"$_outdir"/arch/"$_carch"/boot/dts/exynos/exynos9610.dtb' \
+	install -Dm644 "$_outdir"/arch/"$_carch"/boot/dts/exynos/exynos9610.dtb \
 		"$pkgdir/boot/dtbs/exynos/exynos9610.dtb"
 
 
