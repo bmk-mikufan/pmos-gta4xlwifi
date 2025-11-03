@@ -44,9 +44,9 @@ source="
 	exynos9611.cfg
 	fix-check-lxdialog.patch
 	fix-check-lxdialog-makefile.patch
-	05-add-dts-make.patch
-	fix_kernel_genheaders.patch
-	fix_dts_headers.path
+	a51.cfg
+
+
 	
 
 
@@ -55,6 +55,9 @@ source="
 
 
 "
+#05-add-dts-make.patch
+#fix_kernel_genheaders.patch
+#fix_dts_headers.patch
 #09-build-dtb.patch
 #	05_dtb-fix.patch
 #	0004-build-dtb.patch
@@ -109,7 +112,31 @@ package() {
 	#cp "$_outdir"/arch/"$_carch"/boot/dts/exynos/exynos9610.dtb "$builddir"/
 	install -Dm644 "$_outdir"/arch/"$_carch"/boot/dts/exynos/exynos9610.dtb \
 		"$pkgdir/boot/dtbs/exynos/exynos9610.dtb"
+	install -Dm644 "$_outdir"/arch/"$_carch"/boot/dts/exynos/exynos9610.dtb \
+		"$pkgdir/boot/dtbs/exynos/exynos9610.dtb"
+	# Generate DTB & DTBO
+	## DTB (apply configuration)
+	dtbdir="$_outdir"/arch/$_carch/boot/dts/exynos
+	mkdtboimg cfg_create \
+		"$pkgdir"/boot/dtbs/exynos9610.dtb \
+		"$srcdir"/exynos9611.cfg \
+		-d "$dtbdir"
 
+	## DTBO (create an image and apply configuration)
+	dtbodir="$_outdir"/arch/$_carch/boot/dts/samsung
+	mkdtboimg create "$pkgdir"/boot/dtbo.img --page_size=4096 \
+		"$dtbodir"/exynos9611-gta4xlwifi_eur_open_00.dtbo \
+		"$dtbodir"/exynos9611-gta4xlwifi_eur_open_04.dtbo \
+		"$dtbodir"/exynos9611-gta4xlwifi_eur_open_05.dtbo \
+		"$dtbodir"/exynos9611-gta4xlwifi_eur_open_08.dtbo \
+		"$dtbodir"/exynos9611-gta4xlwifi_eur_open_09.dtbo 
+		
+	mkdtboimg cfg_create \
+		"$pkgdir"/boot/dtbo.img \
+		"$srcdir"/a51.cfg \
+		-d "$dtbodir"
+
+5
 
 
 }
@@ -124,4 +151,5 @@ f10b3ddf297144739c8538bfb7998f19d8aec65e458e8dbe6ef400ffd9dfa845f042f481902dd0d3
 b9919a1010caf6cce9dbee0d3afa8e0b3c0794299d29d778d1ed822b6719a11c2b3ed08808ec5a641fe4a44a635370c0d85451fafdc62396a562fcaf02e5a9b6  exynos9611.cfg
 182be3c596b9cc267ac108d7cf03fc8c328ccc6b36770800e4dcedea8d1bb65e3f5eacf590c2948f58b1418cc60a1670ba77dde8c259e428d158c31b6e1dbaf5  fix-check-lxdialog.patch
 c33fad9de627e72f12e61e728fa1ec53ef15259c7790392a997cc7269e60e45da9534d58851c3b348a1729aaa134d1df305e33546e8a1f3654462f2c3c1d9563  fix-check-lxdialog-makefile.patch
+d1894ffd3c53d0e84678c4d566a833360525d916241cb69f35f9e8e195c0ff163ad2441562f092088726209e1533cb19f23e642e64fd89f31372a742c7d7d5b3  a51.cfg
 "
