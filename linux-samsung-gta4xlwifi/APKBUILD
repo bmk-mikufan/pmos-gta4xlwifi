@@ -28,7 +28,7 @@ makedepends="
 	linux-headers
 	android-tools
 	dtc
-
+	dtbtool
 "
 
 # Source
@@ -46,7 +46,7 @@ source="
 	fix-check-lxdialog-makefile.patch
 	a51.cfg
 	fix_dtbs_install_prep.patch
-
+	recovery_exynos9610.dtb
 
 
 	
@@ -110,17 +110,20 @@ package() {
 
 	make dtbs_install O="$_outdir" ARCH="$_carch" V=1 \
 		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
-
+	
 	#cp "$_outdir"/arch/"$_carch"/boot/dts/exynos/exynos9610.dtb "$builddir"/
 	#install -Dm644 "$_outdir"/arch/"$_carch"/boot/dts/exynos/exynos9610.dtb \
 		#"$pkgdir/boot/dtbs/exynos/exynos9610.dtb"
+	install -Dm644 "$srcdir/recovery_exynos9610.dtb" \
+		"$pkgdir/boot/dtbs/exynos/exynos9610.dtb"
+
 
 	# Generate DTB & DTBO
 	## DTB (apply configuration)
 	dtbdir="$_outdir"/arch/$_carch/boot/dts/exynos
 	mkdtboimg cfg_create \
-		"$pkgdir"/boot/dtbs/exynos9610.dtb \
-		"$srcdir"/exynos9611.cfg \
+		"$pkgdir/boot/dtbs/exynos9610.dtb" \
+		"$srcdir/exynos9611.cfg" \
 		-d "$dtbdir"
 	
 	
@@ -130,17 +133,18 @@ package() {
 	# ---------- Produce a DT TABLE image (dtb.img) that the bootloader expects ----------
 	# NOTE: mkdtimg 옵션은 배포판/버전에 따라 다를 수 있음. 아래 두 가지 시도 중 성공하는 쪽을 사용.
 	# 1) simple create (많은 시스템에서 동작)
-	_dtb_out="$pkgdir/boot/dtb.img"
-	if ! mkdtimg create "$_dtb_out" --page_size=2048 "$pkgdir"/boot/dtbs/exynos9610.dtb ; then
+	#_dtb_out="$pkgdir/boot/dtb.img"
+	_dtb_out="$pkgdir//usr/share/dtb/exynos9610.dtb"
+	#if ! mkdtimg create "$_dtb_out" --page_size=2048 "$pkgdir"/boot/dtbs/exynos9610.dtb ; then
 	    # 2) 더 구체적인 인수(확실하지 않음 — 일부 환경에서 필요)
-	    mkdtimg create "$_dtb_out" --page_size=2048 --id=0 --rev=1 "$pkgdir"/boot/dtbs/exynos9610.dtb || true
-	fi
+	    #mkdtimg create "$_dtb_out" --page_size=2048 --id=0 --rev=1 "$pkgdir"/boot/dtbs/exynos9610.dtb || true
+	#fi
 
 	# verify dt table header quickly (optional) — 도구가 없으면 주석 처리 가능
 	# hexdump -C "$_dtb_out" | head -n 1
 
 
-
+	#cp -f /usr/share/dtb/exynos9610.dtb /boot/dtbs/exynos9610.dtb
 
 
 
@@ -166,7 +170,7 @@ package() {
 
 sha512sums="
 1c99d6fa65e37ffebcbe03cc86e1fbedbc52b706b6f53c5cabb827467af46cfb0b3fd1eff589faf712b5bb34163dd18e7c60749e99fdbc30cd89d80194655f06  linux-samsung-gta4xlwifi-df7598e4aabe7efc26c0a37871b8ee4d72dc8acb.tar.gz
-230938e6b470b66b90360d5a49aa51e613d61ca2da3c7096ab9b0bec82d84522c57af2d01e92391a9fdf07c3fe1fec8ab8094e9553f4922d4c1d2c1c007f65d9  config-samsung-gta4xl.aarch64
+e9356ba269a6fcaaefefa1c61c695eeba66df3f9c8d194faf664e8bd18fd2a2b807e3b2fd98a6575bf9191b2405bfc2c0213173dc7d563aeda71b637fdcb3783  config-samsung-gta4xl.aarch64
 1872a4d9963f128965ab46b329d448e6b776d373cf99f2b8e11d025aa3e10a0308da19beb715c6bdced0b2c6ef44c47a5c013554a19787a64f8ac58d34bc912f  remove-header-lkc.patch
 a7df8f35a946f68120fa9165089477b56e36458472fe5f5e3305093a91eede2aac36845bf20876886db9956e4c4f65c851f286089860efef86fc0fce3f3906cb  fix-dtb-generation.patch
 f10b3ddf297144739c8538bfb7998f19d8aec65e458e8dbe6ef400ffd9dfa845f042f481902dd0d38c97b2cc9c431db7722bccfbdf46bb6d340810bb981a8918  01-fix-dtb_jxelte.patch
@@ -175,4 +179,5 @@ b9919a1010caf6cce9dbee0d3afa8e0b3c0794299d29d778d1ed822b6719a11c2b3ed08808ec5a64
 c33fad9de627e72f12e61e728fa1ec53ef15259c7790392a997cc7269e60e45da9534d58851c3b348a1729aaa134d1df305e33546e8a1f3654462f2c3c1d9563  fix-check-lxdialog-makefile.patch
 f7e76506c06da1480ee8a89d7e2d70cb737ee87f8ab63c67642606f5283245dbfad9a62f38f85f073018825e8f18415d88333534ec5a0b13117ab4f7c49d15aa  a51.cfg
 ae722050fb4815359cc991e7cd56b14d354cd682b8e367ead461a027b2cd2955b92fa9fc1c17f6179e4bdb3924433432363cf566eac10e0f000fd6325c73a358  fix_dtbs_install_prep.patch
+01d23cd83c34c813fcf181401fd1d55ac9791d73263fd84e2007ad5601b4f544417adfc278695894d0dcb08cb076b4cdc97de252478bb3b9e0c9606ee8290738  recovery_exynos9610.dtb
 "
