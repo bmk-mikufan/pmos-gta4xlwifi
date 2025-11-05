@@ -1,0 +1,12 @@
+diff --git a/scripts/Makefile.dtbinst b/scripts/Makefile.dtbinst
+--- a/scripts/Makefile.dtbinst
++++ b/scripts/Makefile.dtbinst
+@@ -0,0 +1,8 @@
++# Added missing dtbs install preparation target
++__dtbs_install_prep:
++	@echo "Preparing DTBs install path: $(INSTALL_DTBS_PATH)"
++	@mkdir -p "$(INSTALL_DTBS_PATH)" >/dev/null 2>&1 || true
++
++# Ensure dtbinst dependencies
++$(dtbinst-files) $(dtboinst-files) $(dtbinst-dirs): | __dtbs_install_prep
++
