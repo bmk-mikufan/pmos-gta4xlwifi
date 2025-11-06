@@ -1,0 +1,33 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Maintainer:
+pkgname=device-mnt-reform2-bpi-cm4
+pkgdesc="MNT Research Reform 2 with BPI-CM4"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base u-boot-amlogic-bananapi-bpi-cm4-cm4io soc-amlogic-s905 linux-postmarketos-amlogic"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+source="deviceinfo modules-initfs"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="vdec firmware"
+	depends="linux-firmware-meson linux-firmware-rtw88"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+ce441bef0770afef4c5a4940b232c48fc565af17ba72accc86a8081117921cc4e77b4157fd1111ec773af0162f853aee298e30e0a23b88ae27f75cfbc82e1675  deviceinfo
+3eaf91b86058aa08545a68d162f63209d82f8e0d09f7435c51f6e04b4d0721999c3cb9ddc114a5736a847048dc87ef3286aa6d6ac5a65215d126bff58cf387e5  modules-initfs
+"

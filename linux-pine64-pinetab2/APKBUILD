@@ -1,0 +1,71 @@
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/pinetab2_defconfig
+# Maintainer: Danct12 <danct12@disroot.org>
+# Co-Maintainer: Stefan Hansson <newbyte@postmarketos.org>
+pkgname=linux-pine64-pinetab2
+pkgver=6.15.10
+_danctnix_kernel_rel=1
+pkgrel=0
+pkgdesc="Pine64 PineTab 2 mainline"
+arch="aarch64"
+_carch="arm64"
+_flavor="pine64-pinetab2"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native"
+depends="kmod"
+makedepends="
+	bash
+	bison
+	findutils
+	flex
+	linux-headers
+	postmarketos-installkernel
+	openssl-dev
+	perl
+	xz
+	zstd
+"
+
+# Source
+_tags="v$pkgver-danctnix$_danctnix_kernel_rel"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_tags.tar.gz::https://codeberg.org/DanctNIX/linux-pinetab2/archive/$_tags.tar.gz
+	$_config
+"
+builddir="$srcdir/linux-pinetab2"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$CARCH" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	install -Dm644 "$builddir/arch/$_carch/boot/Image" \
+		"$pkgdir/boot/vmlinuz"
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+8dd6ce110116887159a28962bba8afbddedcde1c610cd241be1d31596d4952c28e4884d06e8bf5a6a9ba7d2ef66a3d1a4c8d54f9a557cdde9529366b4588a533  linux-pine64-pinetab2-v6.15.10-danctnix1.tar.gz
+0d42ad4aa9326f1a47d454e637766aac2b3f30aa1c39c4dc4133ac92914267fd89f0b36826ead9e234703cc1cc639dd9fb13c46b2c0072a6cc80a74e36c7a464  config-pine64-pinetab2.aarch64
+"

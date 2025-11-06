@@ -1,0 +1,72 @@
+# Reference: https://github.com/archlinuxarm/PKGBUILDs/blob/d2ee78cab3c298583eb3f3bed4d75970f54885be/core/linux-armv7/config
+# Kernel config based on: ~2021 mainline kernel of the linux-armv7 package (5.x mainline) from archlinux arm
+# Maintainer: Robert Eckelmann <longnoserob@postmarketos.org>
+# Co-Maintainer: exkc <exkc@exkc.moe>
+
+pkgname=linux-postmarketos-marvell
+pkgver=6.16
+pkgrel=2
+pkgdesc="mainline (stable) for Marvell SoC"
+arch="armv7"
+_carch="arm"
+_flavor="${pkgname#linux-}"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native pmb:kconfigcheck-community"
+makedepends="
+	bc
+	bison
+	clang
+	devicepkg-dev
+	findutils
+	flex
+	lld
+	llvm
+	openssl-dev
+	perl
+	xz
+"
+replaces="linux-postmarketos-marvell-dove"
+
+# Source
+_config="config-$_flavor.$arch"
+source="
+	wd-glacier.patch
+	$pkgname-$pkgver.tar.xz::https://cdn.kernel.org/pub/linux/kernel/v${pkgver%%.*}.x/linux-$pkgver.tar.xz
+	$_config
+"
+builddir="$srcdir/linux-$pkgver"
+
+prepare() {
+	default_prepare
+	cp -v "$srcdir"/$_config .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	install -Dm644 "$builddir/arch/$_carch/boot/zImage" \
+		"$pkgdir/boot/vmlinuz"
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+
+sha512sums="
+4c26ffca58dbdb75f24670d0aee5115cc3dc96b09ba2bcbcdd435d3e1e49cc0672cb0c0934a357047f59f47e1d24846f46cdd0cdcd19c87e14ff1c045ddd21af  wd-glacier.patch
+55a00f89ad6db6db2e26ff5dc5cfc96bbf6654e5bd5d17d2a3b944a47640367e54139716d230923187bebc6cb7756edc9511a620fb8abc6f32c50a658a734784  linux-postmarketos-marvell-6.16.tar.xz
+1bec9af8453e93d123c3763ee8fcea3ad1fa8a2e2712829662054362be76b943921ce3974a74820f3dec0ec76d2aa67d00d83f323f57731ad58ac5885085ee99  config-postmarketos-marvell.armv7
+"

@@ -1,0 +1,54 @@
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-xiaomi-clover
+pkgdesc="Xiaomi Mi Pad 4"
+pkgver=8
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-qcom-adreno-a530
+	firmware-xiaomi-clover
+	mkbootimg
+	msm-firmware-loader
+	postmarketos-base
+	soc-qcom-sdm660
+	soc-qcom-sdm660-rproc
+"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-kernel-clover:kernel_clover
+	$pkgname-kernel-cloverplus:kernel_cloverplus
+"
+source="
+	deviceinfo
+	modules-initfs.clover
+	modules-initfs.cloverplus
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+kernel_clover() {
+	pkgdesc="For regular Mi Pad 4"
+	depends="linux-postmarketos-qcom-sdm660"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_cloverplus() {
+	pkgdesc="For Mi Pad 4 Plus"
+	depends="linux-postmarketos-qcom-sdm660"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+sha512sums="
+55df79749558d7d67a4ca04adf52d28cb6d14e7aca94dfea321cc010c970f7fbef4dade9425f60922974687c86fe2ec888bc14a5eef75f51355f059608c0b684  deviceinfo
+9549e37b6f572dc27130034a0937380bc8e7e4d45223ca9fca0ef8be662aac0607a24aea0abec5d50b0d56d367d7247897fdeaa50b68004e0ff4ffd79fa0cdba  modules-initfs.clover
+cc84349341862a9d141f0b48ec05e33602a2c22c57f8516f6e08dd36315c1d1b7e1e12cfc197dd88cd6c08dda485882c9e895db0da171fe85bdf3e5e8fc92e56  modules-initfs.cloverplus
+"

@@ -1,0 +1,38 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Maintainer: m0rf30 <morf3089@gmail.com>
+pkgname=device-xiaomi-tulip
+pkgdesc="Xiaomi Redmi Note 6 Pro"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-xiaomi-tulip
+	firmware-qcom-adreno-a530
+	linux-postmarketos-qcom-sdm660
+	mkbootimg
+	msm-firmware-loader
+	postmarketos-base
+	soc-qcom-sdm660
+	soc-qcom-sdm660-rproc
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+10be6eaa8c190a79b4432d007d4302a02866b9b03dac09724e60c6babc8763cde9db424ba7037795fcdf9e7d1fea93d6e550ff8261eb69d716a28eaaac5c2445  deviceinfo
+063a4f0ecfba79d1d47bc7aaf621c3a6314be97b1565ec9e6a0ad19afad6c2ef262da024c7df25292fb18a9d576bec5a060b8c4210125ad292bcc1bf61f7dc82  modules-initfs
+"

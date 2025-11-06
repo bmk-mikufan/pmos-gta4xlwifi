@@ -1,0 +1,102 @@
+# Maintainer: Clayton Craft <clayton@craftyguy.net>
+pkgname=linux-postmarketos-asahi
+pkgver=6.17.5_p1
+pkgrel=0
+_rel=${pkgver#*_p}
+_kver=${pkgver%_p*}
+_kver=${_kver//_/-}
+_asahiver=$_kver-$_rel
+pkgdesc="Kernel for Apple M-series devices"
+arch="aarch64"
+_carch="arm64"
+_flavor="postmarketos-asahi"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip
+	!check
+	!tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-community
+	pmb:kconfigcheck-uefi
+	pmb:kconfigcheck-virt
+"
+makedepends="
+	bash
+	bc
+	bison
+	clang20-libclang
+	devicepkg-dev
+	diffutils
+	elfutils-dev
+	findutils
+	flex
+	git
+	linux-headers
+	openssl-dev
+	pahole
+	perl
+	python3
+	rust
+	rust-bindgen
+	rust-src
+	rustfmt
+	sed
+	zstd
+"
+
+# Source
+_repository="linux"
+source="
+	$pkgname-$_asahiver.tar.gz::https://github.com/AsahiLinux/linux/archive/refs/tags/asahi-$_asahiver.tar.gz
+	asahi.config.patch
+	misc.config
+	pmos.config
+"
+builddir="$srcdir/linux-asahi-$_asahiver"
+# Use the default arm defconfig
+_defconfig="defconfig"
+
+prepare() {
+	default_prepare
+	mkdir -p "$builddir"/arch/"$_carch"/configs
+	local _config
+	for _config in "$srcdir"/*.config; do
+		cp "$_config" "$builddir"/arch/"$_carch"/configs/
+	done
+
+	# Generate .config
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor" \
+		"$_defconfig" asahi.config misc.config pmos.config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz.efi" \
+			"$pkgdir/boot/linux.efi"
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs-asahi
+
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+3cc4af2b8d935b67ef61091f647dc88b884e09cf31505b786b560a970cb5f8d6e54d47f03bbe27cbe8951539baba4db208bfd35cddc6e9474c126442587251b2  linux-postmarketos-asahi-6.17.5-1.tar.gz
+28b00587b6bccbfb870e44f1e9fc459b2fa0fad2eb4e39a316b55d8a76907e6420a59190b94fe5410ae1ff50c0b4be7733995f0735a4b25da1fae9e230d33b09  asahi.config.patch
+2d4edfd9cdc320ede0913cf25afe95b9db46284efc97b282c61f30f85345eec3da8a063b8941e4c44e6393acbe6bf777ce04b2af85c52f65dbf549dc8864358f  misc.config
+e384ea875e249f1039ac2ff2bc2bd775cf18a074722dc74a1cca741caca1cd8ed8db4c2b769941b4b8468b42a59e6ca08454321ed99889b275d1ee7955ce864f  pmos.config
+"

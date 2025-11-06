@@ -1,0 +1,82 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Maintainer: Luca Weiss <luca@lucaweiss.eu>
+pkgname=device-fairphone-fp5
+pkgdesc="Fairphone 5"
+pkgver=8
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	alsa-ucm-conf
+	firmware-fairphone-fp5-adreno
+	firmware-fairphone-fp5-adsp
+	firmware-fairphone-fp5-bluetooth
+	firmware-fairphone-fp5-cdsp
+	firmware-fairphone-fp5-hexagonfs
+	firmware-fairphone-fp5-ipa
+	firmware-fairphone-fp5-modem
+	firmware-fairphone-fp5-venus
+	firmware-fairphone-fp5-wpss
+	firmware-qcom-adreno-a660
+	hexagonrpcd>=0.3.2-r3
+	linux-firmware-ath11k
+	linux-postmarketos-qcom-sc7280
+	make-dynpart-mappings
+	mkbootimg
+	postmarketos-base
+	soc-qcom
+	soc-qcom-modem
+	soc-qcom-pd-mapper
+	soc-qcom-qbootctl
+	unl0kr-fbforcerefresh
+"
+makedepends="devicepkg-dev"
+subpackages="$pkgname-openrc"
+source="
+	81-libssc-fairphone-fp5.rules
+	deviceinfo
+	hexagonrpcd.confd
+	modules-initfs
+	ucm/HiFi.conf
+	ucm/fp5.conf
+	"
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	install -Dm644 "$srcdir"/81-libssc-fairphone-fp5.rules \
+		"$pkgdir"/usr/lib/udev/rules.d/81-libssc-fairphone-fp5.rules
+
+	# ALSA Use Case Manager configuration
+	install -Dm644 -t "$pkgdir"/usr/share/alsa/ucm2/Fairphone/fp5 \
+		"$srcdir"/HiFi.conf \
+		"$srcdir"/fp5.conf
+	mkdir -p "$pkgdir"/usr/share/alsa/ucm2/conf.d/qcm6490
+	ln -s /usr/share/alsa/ucm2/Fairphone/fp5/fp5.conf \
+		"$pkgdir"/usr/share/alsa/ucm2/conf.d/qcm6490/Fairphone\ 5.conf
+
+	install -Dm644 "$srcdir"/hexagonrpcd.confd \
+		"$pkgdir"/usr/share/hexagonrpcd/hexagonrpcd-adsp-sensorspd.conf
+}
+
+openrc() {
+	install_if="$pkgname=$pkgver-r$pkgrel openrc"
+	install="$subpkgname.post-install $subpkgname.post-upgrade"
+	depends="hexagonrpcd-openrc openrc"
+
+	mkdir -p "$subpkgdir"
+}
+
+sha512sums="
+2c16ba75e0077b2b1eaefa4c73b287475505a1aeb291ec29316d41cc094277320f9d2aaabfd91eb1dc0f488ab2d61a94faef16e7afe0f1e226779113761b9a37  81-libssc-fairphone-fp5.rules
+5e4877277bcf3e4f232e96b1edf0bb598b8f16c4820d2db321f502ea9aa339c405458ecd9642c838e4dc4e2dc59d0c57fadd4bc5a9a81c915772b4f244bf1e6d  deviceinfo
+206c7b2616b61c1f7630933d036875985e78cfc23e6a175795b328d251684abeceb06373da4ae211f6f7dd7e45fb3b3238bb8a4b5698906be626d8d918adf5b3  hexagonrpcd.confd
+6280b66b9d4843ef78d0029c31d267b0bf59ea669bc3f2c268edfddf4edb3cec62d40b97c8204c85d1350759ad56e1ac2a5ba8ddc691f73c35c7385350ef12ee  modules-initfs
+f39b6e5de6d9bfefc841e887b92bb5a92d02d1de46fd376ca83871b7a9cf0da5297d7201457b2bb12c302887bb0a9d328604ff910ebda8022ac71ad120b11a3c  HiFi.conf
+fb510ca806fb76174576218f5cb4d799e05757b3e351eec32b1406bcf22540cf27888f30e3737f016d43e3c38dea8d7418c194e12c9879df9c756d4d80ceae99  fp5.conf
+"

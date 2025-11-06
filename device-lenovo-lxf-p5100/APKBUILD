@@ -1,0 +1,42 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Maintainer: exkc <exxxxkc@getgoogleoff.me>
+pkgname=device-lenovo-lxf-p5100
+pkgdesc="Lenovo Yoga Tab 3 10 LTE/WiFi"
+pkgver=3
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-qcom-msm8916
+	mkbootimg
+	postmarketos-base
+	soc-qcom-msm8909
+	soc-qcom-msm8916-rproc
+"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+makedepends="devicepkg-dev"
+source="deviceinfo modules-initfs"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+nonfree_firmware() {
+	pkgdesc="GPU/WiFi/BT/Modem/Video firmware"
+	depends="
+		firmware-qcom-adreno-a300
+		msm-firmware-loader
+	"
+	mkdir "$subpkgdir"
+}
+
+sha512sums="
+bfae7b73c8db6c4b46bec1a61aacd73b195b005ef95bf6bf681e243d8894bc888b6b3ac0528fee8b709150e048812d6376a1b7307b40825a855d6cf35b6f65b8  deviceinfo
+e1047facaa306915608104db561e1f59148d0002de7124a75ef276a0d7401062ec571d4ba1c0c03d645932ac3e9c9a08f8ae09e82f7d85dff6f271eb77fe8513  modules-initfs
+"

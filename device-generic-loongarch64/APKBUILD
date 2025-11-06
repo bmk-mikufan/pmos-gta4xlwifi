@@ -1,0 +1,51 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Maintainer: Jens Reidel <adrian@postmarketos.org>
+pkgname=device-generic-loongarch64
+pkgver=1
+pkgrel=0
+pkgdesc="Generic loongarch64 system"
+url="https://postmarketos.org"
+arch="loongarch64"
+license="MIT"
+depends="
+	alsa-ucm-conf
+	hwdata
+	postmarketos-base
+	systemd-boot
+	"
+makedepends="devicepkg-dev"
+subpackages="
+	$pkgname-kernel-lts:kernel_lts
+	$pkgname-kernel-stable:kernel_stable
+	"
+
+source="
+	deviceinfo
+	modules-initfs
+	"
+options="!check !archcheck"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+kernel_lts() {
+	pkgdesc="Alpine LTS kernel (recommended)"
+	depends="linux-lts"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+kernel_stable() {
+	pkgdesc="Alpine Stable kernel"
+	depends="linux-stable"
+	devicepkg_subpackage_kernel $startdir $pkgname $subpkgname
+}
+
+sha512sums="
+73e7556bb1c431d52c9d8f8779eacad257cd62f55bc33c8cbb4bc0b8d0d1c83d80295cd80763348fef22253b8968037574dab5b5c8e55b4d2629d07edb93690e  deviceinfo
+2acfb32ce5d9c43956a49f48113bdfca6558a8c67a5ffd52aa30e35fc281abd7eff5808f8ae47707f4ba6d75d18acbd013813127263e8eb7529660380e9c3e85  modules-initfs
+"

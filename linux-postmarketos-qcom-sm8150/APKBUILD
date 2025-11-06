@@ -1,0 +1,83 @@
+# Maintainer: Pan Ortiz <panjeoc@proton.me>
+# Co-Maintainer: Viola Guerrera <guerrera.nicola@gmail.com>
+_flavor="postmarketos-qcom-sm8150"
+pkgname=linux-$_flavor
+pkgver=6.17.0
+pkgrel=0
+pkgdesc="Mainline Kernel fork for SM8150 devices"
+arch="aarch64"
+_carch="arm64"
+url="https://gitlab.com/sm8150-mainline/linux"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps
+	pmb:cross-native
+	pmb:kconfigcheck-nftables
+	"
+makedepends="
+	bison
+	findutils
+	flex
+	openssl-dev
+	perl
+	postmarketos-installkernel
+	python3
+	"
+
+_tag="v$pkgver-sm8150"
+
+# Source
+source="
+	linux-$_tag.tar.gz::$url/-/archive/$_tag/linux-$_tag.tar.gz
+	config-$_flavor.$arch
+	0001-lid-switch-fix.patch
+"
+builddir="$srcdir/linux-$_tag"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$arch" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-$_flavor"
+}
+
+package() {
+	if [ -e "$builddir/arch/$_carch/boot/vmlinuz.efi" ]; then
+		# ZBOOT EFI decompressor for EFI booting
+		install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz.efi" \
+			"$pkgdir/boot/linux.efi"
+
+		# Old GZIP'd kernel image for boot.img compatibility
+		install -Dm644 "$builddir/arch/$_carch/boot/vmlinuz" \
+			"$pkgdir/boot/vmlinuz"
+	else
+		echo "WARNING: CONFIG_ZBOOT not enabled!"
+		install -Dm644 "$builddir/arch/$_carch/boot/Image.gz" \
+			"$pkgdir/boot/vmlinuz"
+	fi
+
+	make modules_install dtbs_install \
+		ARCH="$_carch" \
+		INSTALL_PATH="$pkgdir"/boot/ \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs-tmp
+
+	mkdir -p "$pkgdir"/boot/dtbs/qcom
+	cp -r "$pkgdir"/boot/dtbs-tmp/qcom/sm8150* "$pkgdir"/boot/dtbs/qcom
+	rm -rf "$pkgdir"/boot/dtbs-tmp
+
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+274270bb0391bca972b1dffae778ff6fc372457b658e9252104d9894c9f24739e25df7021378cf0ac9c650cc417d0cdcdf1baa88bfdcd494920ee183298e1f34  linux-v6.17.0-sm8150.tar.gz
+72aecca7ac7fb0d9a13d9f33be499673d676123e6fdfe0814b2d25f49d698cca614a4188f976ffa2fa5e94a7918a24ab079ab9091dadabcf70d068a13d4f8314  config-postmarketos-qcom-sm8150.aarch64
+15422195814314d8f9ce905408d1256bec753ca1b58babc59391c4cb8b4fbbc9034c622129d52964ccceb39e6f4326f0eae5ca9271496e1a0432416ecd09cc1d  0001-lid-switch-fix.patch
+"

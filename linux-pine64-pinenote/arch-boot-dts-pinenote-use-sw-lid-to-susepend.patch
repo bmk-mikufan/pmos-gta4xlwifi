@@ -1,0 +1,22 @@
+From b803f86378cd18179092b63ebc82214353db8489 Mon Sep 17 00:00:00 2001
+From: hrdl <git@hrdl.eu>
+Date: Tue, 27 May 2025 13:11:33 +0200
+Subject: [PATCH] use SW_LID
+
+---
+ arch/arm64/boot/dts/rockchip/rk3566-pinenote.dtsi | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm64/boot/dts/rockchip/rk3566-pinenote.dtsi b/arch/arm64/boot/dts/rockchip/rk3566-pinenote.dtsi
+index 7a3c1b69e3517a169659963e24bb0883e0d99cb0..368b77495e24de66c60adb778be77def5a48be28 100644
+--- a/arch/arm64/boot/dts/rockchip/rk3566-pinenote.dtsi
++++ b/arch/arm64/boot/dts/rockchip/rk3566-pinenote.dtsi
+@@ -101,7 +101,7 @@
+ 			label = "cover";
+ 			gpios = <&gpio0 RK_PC7 GPIO_ACTIVE_LOW>;
+ 			linux,input-type = <EV_SW>;
+-			linux,code = <SW_MACHINE_COVER>;
++			linux,code = <SW_LID>;
+ 			linux,can-disable;
+ 			wakeup-event-action = <EV_ACT_DEASSERTED>;
+ 			wakeup-source;

@@ -1,0 +1,36 @@
+# Maintainer: Barnabas Czeman <barnabas.czeman@postmarketos.org>
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-qcom-msm8956
+pkgdesc="Generic device package for various Qualcomm MSM8956/MSM8976-based devices"
+pkgver=4
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-qcom-adreno-a530
+	linux-postmarketos-qcom-msm8956
+	lk2nd-msm8952
+	mkbootimg
+	msm-firmware-loader
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+7da0d11082ad7369af00853d4555a4c921bc4bd67734117fc4e01a398f500f5944ccc82a34b381cc853358f663b6bdb35882437894c8bc20c7e3668e55cd236f  deviceinfo
+3a52ad6bf3b4d6b03a909fa2b6f17194227fac4273b411cba2bac5fa3ef6a9cd1209a179d6af66c4366f99355422314fc5c0b6468c26b7da3193165deeb84e0b  modules-initfs
+"

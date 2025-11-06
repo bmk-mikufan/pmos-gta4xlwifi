@@ -1,0 +1,69 @@
+maintainer="Ingo Reitz <9l@9lo.re>"
+pkgname=linux-postmarketos-gs101
+pkgver=6.18_rc2
+pkgrel=0
+pkgdesc="Google gs101 (Pixel 6 Series) close-to-mainline kernel"
+arch="aarch64"
+_carch="arm64"
+_flavor="postmarketos-gs101"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native pmb:kconfigcheck-community"
+makedepends="
+	bash
+	bc
+	bison
+	findutils
+	flex
+	lz4
+	openssl-dev
+	perl
+	gmp-dev
+	mpc1-dev
+	mpfr-dev
+	zstd
+"
+
+# Source
+_commit="2bce1f7172c8ee7d8e73d027c3f4963282b918f3"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/gs101-mainline/linux/archive/$_commit.tar.gz
+	$_config
+"
+builddir="$srcdir/linux-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/config-$_flavor.$CARCH" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+
+	make Image.lz4 modules_install dtbs_install \
+		ARCH="$_carch" \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+	rm -f "$pkgdir"/lib/modules/*/build "$pkgdir"/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+
+	install -Dm644 "$builddir/arch/$_carch/boot/Image.lz4" \
+		"$pkgdir/boot/vmlinuz"
+}
+
+sha512sums="
+44cfb483162496f3815362ab7e782367fd6a53e8d9f989078087b0bb33522c2783953378a42225813a11d9ff0c43bbf3302fca4b64b567194e25b4dc546b7a0d  linux-postmarketos-gs101-2bce1f7172c8ee7d8e73d027c3f4963282b918f3.tar.gz
+8bd27025c1d45225af52d20db269306aa1fe7885063d0554451e0e07fab7478c5452d0b37c330f518be5491ecf07f1637e8cd181a9b027fe83dcbce5b35b3b59  config-postmarketos-gs101.aarch64
+"

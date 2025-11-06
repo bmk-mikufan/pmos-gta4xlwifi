@@ -1,0 +1,46 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Maintainer: Vincent Knecht <vincent.knecht@mailoo.org>
+pkgname=device-alcatel-idol347
+pkgdesc="Alcatel OneTouch Idol 3 (4.7)"
+pkgver=7
+pkgrel=1
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="postmarketos-base mkbootimg linux-postmarketos-qcom-msm8916
+	 soc-qcom-msm8916 soc-qcom-msm8916-rproc"
+makedepends="devicepkg-dev"
+source="deviceinfo modules-initfs phoc.ini pointercal"
+subpackages="
+	$pkgname-nonfree-firmware:nonfree_firmware
+	$pkgname-phosh
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	install -D -m644 "$srcdir"/pointercal "$pkgdir"/etc/pointercal
+}
+
+nonfree_firmware() {
+	pkgdesc="GPU/WiFi/BT/Modem/Video firmware"
+	depends="firmware-qcom-adreno-a300 msm-firmware-loader
+		 firmware-alcatel-idol347-wcnss-nv firmware-alcatel-idol347-venus"
+	mkdir "$subpkgdir"
+}
+
+phosh() {
+	install_if="$pkgname=$pkgver-r$pkgrel postmarketos-ui-phosh"
+	install -D -m644 "$srcdir"/phoc.ini "$subpkgdir"/etc/phosh/phoc.ini
+}
+
+sha512sums="
+5dbc419ba81fcd508a32a52d284fed78dc5fe185d69f532d1e755395af7c000dfee775f9b9703e5b0e6802925c2e1473a8b72d5d1711f4dce00cf296066f3dc1  deviceinfo
+6c6bae673076920edf1e6477759e9ae5acead5035acad82f7506c625ead99a997a3b00382d043dd8f1ae6deb126b0a8074de14b03bab2b21d2bb4418a91e3481  modules-initfs
+3823556d741a352fc7f43567d7218255a27c45c2c5d4d4bdf23f4d26ce2828c5a1c642519b84fef7f59756c990e6a199d72e6ba0c277939b08a40526c3ff3714  phoc.ini
+ccdfe80d56c7bf8ecce0919a9b1c6721df3c4d0f819585475d4e78b44adf66306f7c2c7082bc7c669dfbfd066028fd2ac3cf4cd2878b34262547ea1fd1f6ae3e  pointercal
+"

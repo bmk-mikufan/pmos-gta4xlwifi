@@ -1,0 +1,41 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Maintainer: Dinolek <git@dinolek.me>
+pkgname=device-xiaomi-begonia
+pkgdesc="Xiaomi Redmi Note 8 Pro"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	firmware-xiaomi-begonia-touchscreen
+	linux-postmarketos-mediatek-mt6785
+	mesa-vulkan-panfrost
+	mkbootimg
+	postmarketos-base
+"
+makedepends="android-tools devicepkg-dev dtc"
+source="deviceinfo modules-initfs"
+
+build() {
+	devicepkg_build $startdir $pkgname
+
+	# begonia bootloader needs empty dtbo, build it and add as recovery_dtbo to final image
+	mkdir "$builddir"
+	echo '/dts-v1/;/{};' | dtc -I dts -O dtb -o "$builddir/empty.dtb"
+	mkdtboimg create "$builddir/empty.dtbo" "$builddir/empty.dtb"
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	mkdir -p "$pkgdir/boot"
+	install -Dm644 "$builddir/empty.dtbo" \
+		"$pkgdir/boot/"
+}
+
+sha512sums="
+4e1c81f48da94310d0ac2e6f8b3b8852f8e5a1726efcf1f5870883d73f22081347c0de02a7b1576efa915903cbbb015a30847a2ee7d4ba6ebed36c82ec218a02  deviceinfo
+fb17475e434aa5c1c7ee3103ef3dc5bd1d663184764d770f5c4944a2ea1901fc5351296ca5dc8e3dc3bf74aac1718f49b932f8be0b39add770c5851c708482b8  modules-initfs
+"

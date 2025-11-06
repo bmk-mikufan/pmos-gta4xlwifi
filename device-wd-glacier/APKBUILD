@@ -1,0 +1,32 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Maintainer: exkc <exkc@exkc.moe>
+
+pkgname=device-wd-glacier
+pkgdesc="WD MyCloud Gen2"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	linux-postmarketos-marvell
+	postmarketos-base
+	u-boot-tools
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+12b6b3454d90ead16c72e5051f1d2030cf279bcc784da3e76e9eae4bf5e3722cce169deeaf4b719e7cd6d5543757315c968a7ddd163cbe3bf8138522837de800  deviceinfo
+"

@@ -1,0 +1,33 @@
+maintainer="Ingo Reitz <9l@9lo.re>"
+pkgname=device-google-bluejay
+pkgdesc="Google Pixel 6a"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	android-tools
+	linux-postmarketos-gs101
+	postmarketos-base
+	soc-google-gs101
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+601fbdbd45faab2e41e1266a78ba6053a0a2a70d514715788d05d2dca668456dd18ef85f208ed096cdda9db0bf86427c919dcf9cc124e395a55a6bacb74c78de  deviceinfo
+a5171dc7a4221a5a63c02820bac1e372c557cee72db9f777099f67eb272595fad6019f876cb47dd1bf455eeb3a45a74f215f2e8c44a6e1bf7cf3d7d9f49d98ad  modules-initfs
+"

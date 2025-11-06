@@ -1,0 +1,35 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Maintainer: Raymond Hackley <wonderfulShrineMaidenOfParadise@postmarketos.org>
+pkgname=device-qcom-msm8226
+pkgdesc="Generic device package for various Qualcomm MSM8226-based devices"
+pkgver=3
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="armv7"
+options="!check !archcheck"
+depends="
+	firmware-qcom-adreno-a330
+	linux-postmarketos-qcom-msm8226
+	msm-firmware-loader
+	postmarketos-base
+	soc-qcom-msm8226
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+57f81ff405eef09e3c468a359ff2e1b9967cb5b75841d92937c0c6a839950517f64bb427324ad0ad1e37f748a129618a55a1a5210b3af44f066e5e3ae2c6281d  deviceinfo
+c9f95fa07c7a8d1445a1d85c74b2ad9dae0854a7898bda0a7af0a283a2a89092ced017c8df1fa09261aa3799db2914413c7c047688da847290b8ac8df7e4b38f  modules-initfs
+"
