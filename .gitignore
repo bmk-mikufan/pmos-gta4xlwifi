@@ -1,6 +1,4 @@
-# 전부 무시
 *
 
-# 예외: gta4xlwifi 관련 폴더만 추적
 !linux-samsung-gta4xlwifi/
 !device-samsung-gta4xlwifi/
