@@ -1,0 +1,48 @@
+# Maintainer: grgergo <csakbek@freemail.hu>
+pkgname=firmware-samsung-gta4xl
+pkgver=1
+pkgrel=0
+pkgdesc="Proprietary firmware for Samsung Galaxy Tab S6 Lite (LTE) (gta4xl)"
+url="https://github.com/TheMuppets/proprietary_vendor_samsung_gta4xl"
+arch="aarch64"
+license="proprietary"
+options="!check !archcheck !tracedeps pmb:cross-native"
+
+src_files="
+	mx140.bin
+	mx140_wlan.hcf
+	mx140_wlan_sw.hcf
+	slsi_reg_database.bin
+"
+
+src_files_lte="
+	mx140_bt.hcf
+"
+
+for file in $src_files; do
+	source="$source $file::https://github.com/TheMuppets/proprietary_vendor_samsung_gta4xl-common/raw/refs/heads/lineage-22.1/proprietary/vendor/etc/wifi/$file"
+done
+
+for file in $src_files_lte; do
+	source="$source $file::https://github.com/TheMuppets/proprietary_vendor_samsung_gta4xl/raw/refs/heads/lineage-22.1/proprietary/vendor/etc/wifi/$file"
+done
+
+package() {
+	gta4xl_dir="$pkgdir/lib/firmware/postmarketos/samsung-gta4xl"
+	local file
+	for file in $src_files $src_files_lte; do
+		install -Dm644 "$srcdir/$file" "$gta4xl_dir/mx140/$file"
+	done
+
+	mkdir -p "$pkgdir"/vendor/etc
+	ln -s /lib/firmware/postmarketos/samsung-gta4xl "$pkgdir"/vendor/etc/wifi
+
+}
+
+sha512sums="
+44a61fe3cb7ce749bef695aea55a2cefe888744d55b432c2852013c699a262df4b149722693b699928a9247d23b9c5730fa334153bcf0fcea8c3cb814606233c  mx140.bin
+fb8cb282db291c090057dfa960a193b39c773b324dcd36ee66375e95a3827e1f032935b933190c12fa520eee8fcfe3b2d2aeb0d020c5912339f58df7e7a675d6  mx140_wlan.hcf
+c30c5939e23ec52ef7d40736369100d2dae53e996d0ab0eae80ce8eb7282c883b2485261e1c7211603d3cd8c7c34e48808386c80e4192117ddddc4ae346bb6da  mx140_wlan_sw.hcf
+4ce09f3c3bd594ad51e6965d3ca40c9d8b966c697eeecb4b6ae77a077c953b9415721b316b7561fc7e1e4537898d66a8d53cf9a19fd1b8eaea399689c021c104  slsi_reg_database.bin
+e5b106fe63fef7f12663b2b1606661e8d2232a8c36ab401a9eab740b1a56a286707219b525992a032b8fb68c5e04af65c7cba5e10d9ab0c8099c04a5190710bb  mx140_bt.hcf
+"

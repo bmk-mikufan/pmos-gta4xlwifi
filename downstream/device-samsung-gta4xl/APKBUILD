@@ -1,0 +1,51 @@
+# Maintainer: grgergo <csakbek@freemail.hu>
+# Reference: <https://postmarketos.org/devicepkg>
+pkgname=device-samsung-gta4xl
+pkgdesc="Samsung Galaxy Tab S6 Lite (LTE)"
+pkgver=1
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck!strip !check !tracedeps pmb:cross-native"
+
+depends="
+	linux-samsung-gta4xl
+	mkbootimg
+	postmarketos-base
+	make-dynpart-mappings
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	NetworkManager-conf.d-swlan0-p2p0-unmanaged.conf
+	lightdm.conf
+"
+subpackages="$pkgname-nonfree-firmware:nonfree_firmware"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+
+	# Disable swlan0 (additionally x0wlan0) & p2p0 management
+	install -Dm644 NetworkManager-conf.d-swlan0-p2p0-unmanaged.conf "$pkgdir"/usr/lib/NetworkManager/conf.d/swlan0-p2p0-unmanaged.conf
+
+	# Fix LightDM
+	install -Dm644 lightdm.conf "$pkgdir"/etc/lightdm/lightdm.conf.d/99-fix.conf
+}
+
+nonfree_firmware() {
+	pkgdesc="Non-free firmware for Samsung Galaxy Tab S6 Lite (LTE) (gta4xl)"
+	depends="firmware-samsung-gta4xl"
+	mkdir "$subpkgdir"
+}
+
+
+sha512sums="
+f4d8379d782c71c9948094d4ab4a076923502fc05959829fdf6e4da0f77ea9939cec0516561701a5b163a7edd7c0b5b89277750877ec2b69399d1762fe5255ac  deviceinfo
+10dc120045062a47b11ab4762dcb4425b2a521b2bcede4e4d3b691f9f2cf2ced77bdff059992ff55cd11af59663802ecb8e750ca02ee70cfa8950b9a090b5dfb  NetworkManager-conf.d-swlan0-p2p0-unmanaged.conf
+baee319b6d2f49a15680b0f322ec3e398a071d73fbf7713d14f26a1d027f8950457a482ac3f019605af3dfcf25bbb33ebaa0ffde181f7f96d911d56251c81eef  lightdm.conf
+"
