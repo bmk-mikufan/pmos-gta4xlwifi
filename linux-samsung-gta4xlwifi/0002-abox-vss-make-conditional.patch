@@ -1,0 +1,44 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: postmarketOS <user@postmarketos.org>
+Date: Sun, 21 Jun 2026 12:00:00 +0900
+Subject: [PATCH] sound/soc/samsung/abox: add CONFIG_SAMSUNG_ABOX_VSS option
+
+Add a new Kconfig symbol SAMSUNG_ABOX_VSS so that the abox_vss driver
+can be disabled at build time. This is needed for devices like
+gta4xlwifi where the VSS SHM region does not exist and accessing it
+causes a kernel panic.
+
+Signed-off-by: postmarketOS <user@postmarketos.org>
+---
+ sound/soc/samsung/abox/Kconfig  | 9 +++++++++
+ sound/soc/samsung/abox/Makefile | 3 ++-
+ 2 files changed, 11 insertions(+), 1 deletion(-)
+
+diff --git a/sound/soc/samsung/abox/Kconfig b/sound/soc/samsung/abox/Kconfig
+index 9e397dfb02ea..62a7657548e6 100644
+--- a/sound/soc/samsung/abox/Kconfig
++++ b/sound/soc/samsung/abox/Kconfig
+@@ -32,3 +32,12 @@ config SEC_SND_ADAPTATION
+ 	  Say Y or M if you want to add support for external devices attached to
+ 	  the Samsung SoC ABOX interface. You will also need to
+ 	  select the audio interfaces to support below.
++
++config SAMSUNG_ABOX_VSS
++	bool "Samsung ABOX Voice Smart Standby support"
++	depends on SND_SOC_SAMSUNG_ABOX
++	default y
++	help
++	  Say Y to enable the ABOX VSS (Voice Smart Standby) driver.
++	  Disable this if the device does not have the required shared
++	  memory region, which would otherwise cause a kernel panic on boot.
+diff --git a/sound/soc/samsung/abox/Makefile b/sound/soc/samsung/abox/Makefile
+index 360a6ee75a2c..59be2556e17a 100644
+--- a/sound/soc/samsung/abox/Makefile
++++ b/sound/soc/samsung/abox/Makefile
+@@ -1,4 +1,5 @@
+-obj-$(CONFIG_SND_SOC_SAMSUNG_ABOX) += abox_util.o abox_dbg.o abox_dump.o abox_log.o abox_gic.o abox.o abox_rdma.o abox_wdma.o abox_if.o abox_effect.o abox_vss.o abox_failsafe.o abox_vdma.o abox_bt.o abox_mmapfd.o
++obj-$(CONFIG_SND_SOC_SAMSUNG_ABOX) += abox_util.o abox_dbg.o abox_dump.o abox_log.o abox_gic.o abox.o abox_rdma.o abox_wdma.o abox_if.o abox_effect.o abox_failsafe.o abox_vdma.o abox_bt.o abox_mmapfd.o
++obj-$(CONFIG_SAMSUNG_ABOX_VSS) += abox_vss.o
+ obj-$(CONFIG_SEC_SND_SYNCHRONIZED_IPC) += abox_synchronized_ipc.o
+ obj-$(CONFIG_SEC_SND_SYNCHRONIZED_IPC_RICHTEK) += abox_synchronized_ipc_richtek.o
+ obj-$(CONFIG_SEC_SND_ADAPTATION) += abox_adaptation.o
