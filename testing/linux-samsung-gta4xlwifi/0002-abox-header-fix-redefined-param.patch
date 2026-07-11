@@ -1,0 +1,13 @@
+diff --git a/include/sound/samsung/abox.h b/include/sound/samsung/abox.h
+index f1276b69c91b..81ff96b8fe22 100644
+--- a/include/sound/samsung/abox.h
++++ b/include/sound/samsung/abox.h
+@@ -199,7 +199,7 @@ static inline int abox_hw_params_fixup_helper(struct snd_soc_pcm_runtime *rtd,
+ }
+ 
+ static inline int abox_iommu_map(struct device *dev, unsigned long iova,
+-		phys_addr_t addr, size_t bytes, void *addr)
++		phys_addr_t addr, size_t bytes, void *area)
+ {
+ 	return -ENODEV;
+ }

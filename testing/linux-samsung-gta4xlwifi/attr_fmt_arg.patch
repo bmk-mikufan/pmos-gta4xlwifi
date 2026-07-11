@@ -1,5 +1,5 @@
 diff --git a/scripts/kconfig/lkc.h b/scripts/kconfig/lkc.h
-index e2fc50ae4b90..63627df05e89 100644
+index e2fc50ae4b90..7cec3f51767a 100644
 --- a/scripts/kconfig/lkc.h
 +++ b/scripts/kconfig/lkc.h
 @@ -12,7 +12,7 @@
@@ -7,7 +7,7 @@ index e2fc50ae4b90..63627df05e89 100644
  #else
  # include <features.h>
 -__attribute_format_arg__(1)
-+
++__attribute__((format_arg(1)))
  static inline const char *gettext(const char *txt) { return txt; }
  static inline void textdomain(const char *domainname) {}
  static inline void bindtextdomain(const char *name, const char *dir) {}

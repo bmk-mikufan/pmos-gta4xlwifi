@@ -1,0 +1,182 @@
+diff --git a/drivers/bluetooth/h4_recv.h b/drivers/bluetooth/h4_recv.h
+index 83814959a5ad..bf9ad284ddb3 100755
+--- a/drivers/bluetooth/h4_recv.h
++++ b/drivers/bluetooth/h4_recv.h
+@@ -90,7 +90,7 @@ static inline struct sk_buff *h4_recv_buf(struct hci_dev *hdev,
+ 		}
+ 
+ 		len = min_t(uint, hci_skb_expect(skb) - skb->len, count);
+-#if KERNEL_VERSION(4, 13, 0) > LINUX_VERSION_CODE
++#if 0 // horrible hack KERNEL_VERSION(4, 13, 0) > LINUX_VERSION_CODE
+ 		memcpy(skb_put(skb, len), buffer, len);
+ #else
+ 		skb_put_data(skb, buffer, len);
+diff --git a/drivers/misc/samsung/scsc_bt/scsc_bluez.c b/drivers/misc/samsung/scsc_bt/scsc_bluez.c
+index 1c58f95c19f0..32bdf8539b31 100755
+--- a/drivers/misc/samsung/scsc_bt/scsc_bluez.c
++++ b/drivers/misc/samsung/scsc_bt/scsc_bluez.c
+@@ -182,7 +182,7 @@ static void slsi_bt_open_worker(struct work_struct *work)
+ 		}
+ 
+ 		hdev->bus = HCI_VIRTUAL;
+-		hdev->dev_type = HCI_BREDR;
++		hdev->dev_type = HCI_PRIMARY;
+ 
+ 		SET_HCIDEV_DEV(hdev, dev_ref);
+ 
+diff --git a/drivers/misc/samsung/scsc_bt/scsc_bt_module.c b/drivers/misc/samsung/scsc_bt/scsc_bt_module.c
+index ae976f94ba49..8151e283eff3 100755
+--- a/drivers/misc/samsung/scsc_bt/scsc_bt_module.c
++++ b/drivers/misc/samsung/scsc_bt/scsc_bt_module.c
+@@ -720,7 +720,7 @@ static void get_bluetooth_address(uint32_t *lap, uint8_t *uap, uint16_t *nap)
+ 	SCSC_TAG_DEBUG(BT_COMMON,
+ 		"loading Bluetooth address configuration file: "
+ 		SCSC_BT_ADDR "\n");
+-	err = mx140_request_file(common_service.maxwell_core, SCSC_BT_ADDR, &firm);
++	int err = mx140_request_file(common_service.maxwell_core, SCSC_BT_ADDR, &firm);
+ 	if (err) {
+ 		/* Not found - just silently ignore this */
+ 		SCSC_TAG_DEBUG(BT_COMMON, "Bluetooth address not found\n");
+diff --git a/net/bluetooth/hci_sock.c b/net/bluetooth/hci_sock.c
+index d23ee41bea08..f86b694dc8b6 100644
+--- a/net/bluetooth/hci_sock.c
++++ b/net/bluetooth/hci_sock.c
+@@ -39,7 +39,7 @@
+ static LIST_HEAD(mgmt_chan_list);
+ static DEFINE_MUTEX(mgmt_chan_list_lock);
+ 
+-// static DEFINE_IDA(sock_cookie_ida);
++static DEFINE_IDA(sock_cookie_ida);
+ 
+ static atomic_t monitor_promisc = ATOMIC_INIT(0);
+ 
+@@ -94,7 +94,7 @@ u32 hci_sock_get_cookie(struct sock *sk)
+ {
+ 	return hci_pi(sk)->cookie;
+ }
+-/*
++
+ static bool hci_sock_gen_cookie(struct sock *sk)
+ {
+ 	int id = hci_pi(sk)->cookie;
+@@ -121,7 +121,7 @@ static void hci_sock_free_cookie(struct sock *sk)
+ 		ida_simple_remove(&sock_cookie_ida, id);
+ 	}
+ }
+-*/
++
+ static inline int hci_test_bit(int nr, const void *addr)
+ {
+ 	return *((const __u32 *) addr + (nr >> 5)) & ((__u32) 1 << (nr & 31));
+@@ -486,7 +486,7 @@ static struct sk_buff *create_monitor_event(struct hci_dev *hdev, int event)
+ 
+ 	return skb;
+ }
+-/*
++
+ static struct sk_buff *create_monitor_ctrl_open(struct sock *sk)
+ {
+ 	struct hci_mon_hdr *hdr;
+@@ -582,7 +582,7 @@ static struct sk_buff *create_monitor_ctrl_close(struct sock *sk)
+ 
+ 	return skb;
+ }
+-*/
++
+ static struct sk_buff *create_monitor_ctrl_command(struct sock *sk, u16 index,
+ 						   u16 opcode, u16 len,
+ 						   const void *buf)
+@@ -609,7 +609,7 @@ static struct sk_buff *create_monitor_ctrl_command(struct sock *sk, u16 index,
+ 
+ 	return skb;
+ }
+-/*
++
+ static void __printf(2, 3)
+ send_monitor_note(struct sock *sk, const char *fmt, ...)
+ {
+@@ -703,7 +703,7 @@ static void send_monitor_control_replay(struct sock *mon_sk)
+ 
+ 	read_unlock(&hci_sk_list.lock);
+ }
+-*/
++
+ /* Generate internal stack event */
+ static void hci_si_event(struct hci_dev *hdev, int type, int dlen, void *data)
+ {
+@@ -883,7 +883,7 @@ static int hci_sock_release(struct socket *sock)
+     */
+ 	return 0;
+ }
+-/*
++
+ static int hci_sock_blacklist_add(struct hci_dev *hdev, void __user *arg)
+ {
+ 	bdaddr_t bdaddr;
+@@ -961,11 +961,10 @@ static int hci_sock_bound_ioctl(struct sock *sk, unsigned int cmd,
+ 
+ 	return -ENOIOCTLCMD;
+ }
+-*/
++
+ static int hci_sock_ioctl(struct socket *sock, unsigned int cmd,
+ 			  unsigned long arg)
+ {
+-    /*
+ 	void __user *argp = (void __user *)arg;
+ 	struct sock *sk = sock->sk;
+ 	int err;
+@@ -1090,14 +1089,12 @@ static int hci_sock_ioctl(struct socket *sock, unsigned int cmd,
+ done:
+ 	release_sock(sk);
+ 	return err;
+-    */
+ 	return 0;
+ }
+ 
+ static int hci_sock_bind(struct socket *sock, struct sockaddr *addr,
+ 			 int addr_len)
+ {
+-    /*
+ 	struct sockaddr_hci haddr;
+ 	struct sock *sk = sock->sk;
+ 	struct hci_dev *hdev = NULL;
+@@ -1389,14 +1386,12 @@ static int hci_sock_bind(struct socket *sock, struct sockaddr *addr,
+ done:
+ 	release_sock(sk);
+ 	return err;
+-    */
+     return 0;
+ }
+ 
+ static int hci_sock_getname(struct socket *sock, struct sockaddr *addr,
+ 			    int *addr_len, int peer)
+ {
+-    /*
+ 	struct sockaddr_hci *haddr = (struct sockaddr_hci *)addr;
+ 	struct sock *sk = sock->sk;
+ 	struct hci_dev *hdev;
+@@ -1423,7 +1418,6 @@ static int hci_sock_getname(struct socket *sock, struct sockaddr *addr,
+ done:
+ 	release_sock(sk);
+ 	return err;
+-    */
+     return 0;
+ }
+ 
+@@ -2058,7 +2052,6 @@ static struct proto hci_sk_proto = {
+ static int hci_sock_create(struct net *net, struct socket *sock, int protocol,
+ 			   int kern)
+ {
+-    /*
+ 	struct sock *sk;
+ 
+ 	BT_DBG("sock %p", sock);
+@@ -2083,7 +2076,6 @@ static int hci_sock_create(struct net *net, struct socket *sock, int protocol,
+ 	sk->sk_destruct = hci_sock_destruct;
+ 
+ 	bt_sock_link(&hci_sk_list, sk);
+-    */
+ 	return 0;
+ }
+ 

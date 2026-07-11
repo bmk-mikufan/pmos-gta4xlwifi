@@ -4,15 +4,15 @@
 pkgname=linux-samsung-gta4xlwifi
 pkgver=4.14.356
 pkgrel=0
-pkgdesc="samsung galaxy tab s6 lite wifi kernel fork"
+pkgdesc="Samsung Galaxy Tab S6 Lite kernel fork"
 arch="aarch64"
 _carch="arm64"
-_flavor="samsung-gta4xl"
-url="https://github.com/LineageOS/android_kernel_samsung_gta4xl.git"
+_flavor="samsung-gta4xlwifi"
+url="https://kernel.org"
 license="GPL-2.0-only"
 options="!strip !check !tracedeps pmb:cross-native"
-
-makedepends="
+hostmakedepends=""
+	makedepends="
 	bash
 	bc
 	bison
@@ -21,66 +21,39 @@ makedepends="
 	flex
 	openssl-dev
 	perl
-	gettext-dev
-	clang19
-	mdp
-	dtbtool
 	linux-headers
 	android-tools
-	dtc
-	dtbtool
+	clang
+	binutils-aarch64
 "
+
+# Compiler: clang
+export CC="clang"
+export HOSTCC="clang"
 
 # Source
 _repository="android_kernel_samsung_gta4xl"
 _commit="df7598e4aabe7efc26c0a37871b8ee4d72dc8acb"
-_config="config-samsung-gta4xl.aarch64"
+_config="config-$_flavor.$arch"
 source="
 	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
 	$_config
-	remove-header-lkc.patch
-	fix-dtb-generation.patch
-	01-fix-dtb_jxelte.patch
-	exynos9611.cfg
+	attr_fmt_arg.patch
 	fix-check-lxdialog.patch
-	fix-check-lxdialog-makefile.patch
-	a51.cfg
-	fix_dtbs_install_prep.patch
-	recovery_exynos9610.dtb
-	0002-abox-vss-make-conditional.patch
-
-
-	
-
-
-
-
-
-
+	bt.patch
+	0001-SQUASH-HACK-DECON-framebuffer-fixes-for-Linux.patch
+	0001-fbdev-exynos-dpu20-Remove-one-of-samsung-debug-log.patch
+	exynos9611.cfg
+	gta4xlwifi.cfg
+	0002-abox-header-fix-redefined-param.patch
 "
-#05-add-dts-make.patch
-#fix_kernel_genheaders.patch
-#fix_dts_headers.patch
-#09-build-dtb.patch
-#	05_dtb-fix.patch
-#	0004-build-dtb.patch
-#0003-Change-dtb-config-variable.patch
-#03_add-missing-dtbs.patch
-#arm64-boot-disable-building-DTBO-images.patch
-#arm64-dts-Add-dtbs_install-make-target.patch
-#gcc7-give-up-on-ilog2-const-optimizations.patch
-#gcc8-fix-put-user.patch
-#gcc10-extern_YYLOC_global_declaration.patch
-#kernel-use-the-gnu89-standard-explicitly.patch
 builddir="$srcdir/$_repository-$_commit"
 _outdir="out"
 
 prepare() {
 	default_prepare
-	REPLACE_GCCH=0
-	export CC="clang-19"
-	export HOSTCC="clang-19"
-	. downstreamkernel_prepare
+	REPLACE_GCCH=0 . downstreamkernel_prepare
+
 	# Remove -Werror from all makefiles
 	local i
 	local makefiles="$(find . -type f -name Makefile)
@@ -89,101 +62,48 @@ prepare() {
 	    sed -i 's/-Werror-/-W/g' "$i"
 	    sed -i 's/-Werror//g' "$i"
 	done
-	# Disable abox_vss driver (causes kernel panic on gta4xlwifi:
-	# "Unable to handle kernel paging request at virtual address ffffffff80600000")
-	./scripts/config --file "$_outdir/.config" --disable SAMSUNG_ABOX_VSS
-	yes "" | make -C "$builddir" ARCH="$_carch" O="$_outdir" oldconfig
+
 }
 
 build() {
 	unset LDFLAGS
-	#install -Dm644 "$srcdir/exynos9610.dtb" \
-		#"$pkgdir/boot/dtbs/exynos/exynos9610.dtb"
-
 	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
 		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
-	make dtbs O="$_outdir" DTC_EXT=dtc ARCH="$_carch" CC="${CC:-gcc}" V=1
-	
-	ls "$_outdir"/arch/"$_carch"/boot/dts/samsung
-	ls "$_outdir"/arch/"$_carch"/boot/dts/exynos
-
 }
 
 package() {
 	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
 		"$_flavor" "$_outdir"
 
-	make dtbs_install O="$_outdir" ARCH="$_carch" V=1 \
-		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
-	
-	#cp "$_outdir"/arch/"$_carch"/boot/dts/exynos/exynos9610.dtb "$builddir"/
-	#install -Dm644 "$_outdir"/arch/"$_carch"/boot/dts/exynos/exynos9610.dtb \
-		#"$pkgdir/boot/dtbs/exynos/exynos9610.dtb"
-	install -Dm644 "$srcdir/recovery_exynos9610.dtb" \
-		"$pkgdir/boot/dtbs/exynos/exynos9610.dtb"
-
+	install -Dm644 "$_outdir"/arch/$_carch/boot/dts/exynos/exynos9610.dtb "$pkgdir"/boot/dtbs/exynos9610.dtb
 
 	# Generate DTB & DTBO
 	## DTB (apply configuration)
 	dtbdir="$_outdir"/arch/$_carch/boot/dts/exynos
 	mkdtboimg cfg_create \
-		"$pkgdir/boot/dtbs/exynos9610.dtb" \
-		"$srcdir/exynos9611.cfg" \
+		"$pkgdir"/boot/dtbs/exynos9610.dtb \
+		"$srcdir"/exynos9611.cfg \
 		-d "$dtbdir"
-	
-	
-	
-	
-	
-	# ---------- Produce a DT TABLE image (dtb.img) that the bootloader expects ----------
-	# NOTE: mkdtimg 옵션은 배포판/버전에 따라 다를 수 있음. 아래 두 가지 시도 중 성공하는 쪽을 사용.
-	# 1) simple create (많은 시스템에서 동작)
-	#_dtb_out="$pkgdir/boot/dtb.img"
-	_dtb_out="$pkgdir//usr/share/dtb/exynos9610.dtb"
-	#if ! mkdtimg create "$_dtb_out" --page_size=2048 "$pkgdir"/boot/dtbs/exynos9610.dtb ; then
-	    # 2) 더 구체적인 인수(확실하지 않음 — 일부 환경에서 필요)
-	    #mkdtimg create "$_dtb_out" --page_size=2048 --id=0 --rev=1 "$pkgdir"/boot/dtbs/exynos9610.dtb || true
-	#fi
 
-	# verify dt table header quickly (optional) — 도구가 없으면 주석 처리 가능
-	# hexdump -C "$_dtb_out" | head -n 1
-
-
-	#cp -f /usr/share/dtb/exynos9610.dtb /boot/dtbs/exynos9610.dtb
-
-
-
-	
 	## DTBO (create an image and apply configuration)
 	dtbodir="$_outdir"/arch/$_carch/boot/dts/samsung
-	mkdtboimg create "$pkgdir"/boot/dtbo.img --page_size=2048 \
-		"$dtbodir"/exynos9611-gta4xlwifi_eur_open_00.dtbo \
-		"$dtbodir"/exynos9611-gta4xlwifi_eur_open_04.dtbo \
-		"$dtbodir"/exynos9611-gta4xlwifi_eur_open_05.dtbo \
-		"$dtbodir"/exynos9611-gta4xlwifi_eur_open_08.dtbo \
-		"$dtbodir"/exynos9611-gta4xlwifi_eur_open_09.dtbo 
-		
+	mkdtboimg create "$pkgdir"/boot/dtbo.img --page_size=4096 \
+		"$dtbodir"/exynos9611-gta4xlwifi*.dtbo
 	mkdtboimg cfg_create \
 		"$pkgdir"/boot/dtbo.img \
-		"$srcdir"/a51.cfg \
+		"$srcdir"/gta4xlwifi.cfg \
 		-d "$dtbodir"
-
-
-
 }
-
 
 sha512sums="
 1c99d6fa65e37ffebcbe03cc86e1fbedbc52b706b6f53c5cabb827467af46cfb0b3fd1eff589faf712b5bb34163dd18e7c60749e99fdbc30cd89d80194655f06  linux-samsung-gta4xlwifi-df7598e4aabe7efc26c0a37871b8ee4d72dc8acb.tar.gz
-12b3d72bee46dbbd3a9d550c5ac721678ba84f9163151c076ee0e9df1b179246ebd80fa7a37ed87a6a7e511f07e33ce51466eb8dca3024b3c32ffedb4ae70757  config-samsung-gta4xl.aarch64
-1872a4d9963f128965ab46b329d448e6b776d373cf99f2b8e11d025aa3e10a0308da19beb715c6bdced0b2c6ef44c47a5c013554a19787a64f8ac58d34bc912f  remove-header-lkc.patch
-a7df8f35a946f68120fa9165089477b56e36458472fe5f5e3305093a91eede2aac36845bf20876886db9956e4c4f65c851f286089860efef86fc0fce3f3906cb  fix-dtb-generation.patch
-f10b3ddf297144739c8538bfb7998f19d8aec65e458e8dbe6ef400ffd9dfa845f042f481902dd0d38c97b2cc9c431db7722bccfbdf46bb6d340810bb981a8918  01-fix-dtb_jxelte.patch
-b9919a1010caf6cce9dbee0d3afa8e0b3c0794299d29d778d1ed822b6719a11c2b3ed08808ec5a641fe4a44a635370c0d85451fafdc62396a562fcaf02e5a9b6  exynos9611.cfg
-182be3c596b9cc267ac108d7cf03fc8c328ccc6b36770800e4dcedea8d1bb65e3f5eacf590c2948f58b1418cc60a1670ba77dde8c259e428d158c31b6e1dbaf5  fix-check-lxdialog.patch
-c33fad9de627e72f12e61e728fa1ec53ef15259c7790392a997cc7269e60e45da9534d58851c3b348a1729aaa134d1df305e33546e8a1f3654462f2c3c1d9563  fix-check-lxdialog-makefile.patch
-f7e76506c06da1480ee8a89d7e2d70cb737ee87f8ab63c67642606f5283245dbfad9a62f38f85f073018825e8f18415d88333534ec5a0b13117ab4f7c49d15aa  a51.cfg
-ae722050fb4815359cc991e7cd56b14d354cd682b8e367ead461a027b2cd2955b92fa9fc1c17f6179e4bdb3924433432363cf566eac10e0f000fd6325c73a358  fix_dtbs_install_prep.patch
-01d23cd83c34c813fcf181401fd1d55ac9791d73263fd84e2007ad5601b4f544417adfc278695894d0dcb08cb076b4cdc97de252478bb3b9e0c9606ee8290738  recovery_exynos9610.dtb
-b09ff4b98d106138dcc3c036255640e3ff226974a4e76c6d45c56f2cedc8c3ec41374f3fa0567e0b7addd2fff13b2aa149f0011fe4b1e0b5de69b2291f5cdd4f  0002-abox-vss-make-conditional.patch
+713a3c708d26dd4a1f3170d3986323194c5b7bed5b7bd87e35c3a25d1ddfbb627495598cdd126f1c00c58d0309ebb29f320469df0fd1fe6670bed698cb370553  config-samsung-gta4xlwifi.aarch64
+3d4981df4b7f98a3286958b77676bf933923ea906a66c93b78bb59843205e0f00638a51f8362357f93b76a00e4aa1b66720889a01a0d5efcb995bcf12cbb87f9  attr_fmt_arg.patch
+f748320ebe3e630b37977b6ea9f09498251cbf27368a7851b0a514853df6ad85da90cd282f62de1fbe95c551d91db82279be13611867263f4bc8aac3398aef82  fix-check-lxdialog.patch
+2aa1fe56f0d773cba0b17459602c84b69499d82c4ce551eeb5cf01963f63439843bfd779295fd4bde6ef59d4d8271d7544882e6ea8cd27344300ff4e01e76899  bt.patch
+ba1bf397e6ae63ff53aad715940d664fcbd0273ddbd9554c01171133f07627eadab2f174c408ebe4f25b92fcf66f1a3292b9928643e8599e7b1c28decbbed323  0001-SQUASH-HACK-DECON-framebuffer-fixes-for-Linux.patch
+93d43ca0d218729e60bd3256585a13ed6057881654147c2b84cab0423a5f8969c9566367b89226ddd153e7efa8f29878d0b7fc7c438ff02893bac15de1d41418  0001-fbdev-exynos-dpu20-Remove-one-of-samsung-debug-log.patch
+faf4a4719588c0e09c7b271a02760b22d7f8ec7a75445d20e7e0eed7e8c5ed960abcc2fd80ef553a41a8ff8d074e071a2154028b9f23cc3aafe6d154df86ac50  exynos9611.cfg
+f6604519b865a10e60693e379c900f78f51ed55b19d80d69e8a384fd28ae6dbf780dcb0a40f34026d6414b1132f401f262b7c1e58e1f8cb9334065a243ee3cd6  gta4xlwifi.cfg
+e7c60df18760e0579ceb5bd74405fb63ae4b0fba0ff7fe6d0d295c4743da5588fbb0550ba1c708a8ae6c93166e0fe98e176a22560101f0a07ca0ba834ac81273  0002-abox-header-fix-redefined-param.patch
 "
