@@ -1,0 +1,98 @@
+# Kernel config based on: arch/arm64/configs/defconfig
+
+maintainer=""
+pkgname=linux-samsung-exynos9610
+pkgver=7.0.0_rc1
+pkgrel=0
+pkgdesc="Mainline kernel with patches for Samsung Exynos9610 support"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-exynos9610"
+url="https://kernel.org"
+license="GPL-2.0-only"
+makedepends="
+	bash
+	bc
+	bison
+	clang
+	devicepkg-dev
+	findutils
+	flex
+	lld
+	llvm
+	openssl-dev
+	perl
+	python3
+"
+
+# Compiler: clang
+
+# Source
+_config="exynos9610.config"
+source="
+	linux-for-next.tar.gz::https://git.kernel.org/pub/scm/linux/kernel/git/krzk/linux.git/snapshot/linux-for-next.tar.gz
+	exynos9610.config
+	0001-bring-in-simplefb-earlycon.patch
+	0002-video-fbdev-earlycon-Fix-compile-warning.patch
+	0003-fbdev-earlycon-Protect-screen_info-struct.patch
+	0004-fbdev-earlycon-Pass-NULL-to-get_default_font.patch
+	0001-dt-bindings-clock-samsung-Add-Exynos9610-CMU-binding.patch
+	0002-clk-samsung-clk-pll-Add-support-for-pll_1061x.patch
+	0003-WIP-clk-samsung-clk-pll-Add-support-for-pll_1054x.patch
+	0004-clk-samsung-Introduce-Exynos9610-clock-controller-dr.patch
+	0005-dt-bindings-soc-exynos-sysreg-Add-Exynos9610-SYSREG-.patch
+	0006-dt-bindings-arm-samsung-Document-gta4xl-board-bindin.patch
+	0007-MAINTAINERS-Add-entry-for-Samsung-Exynos9610-SoC.patch
+	0008-arm64-dts-exynos-Add-initial-support-for-the-Exynos9.patch
+	0009-arm64-dts-exynos-Add-initial-support-for-Samsung-Gal.patch
+"
+builddir="$srcdir/linux-for-next/"
+
+prepare() {
+	default_prepare
+	cp "$srcdir"/exynos9610.config "$builddir"/arch/arm64/configs/exynos9610.config
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS" \
+		defconfig exynos9610.config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" LLVM=1 \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+	make install modules_install dtbs_install \
+		ARCH="$_carch" \
+		LLVM=1 \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir" \
+		INSTALL_DTBS_PATH="$pkgdir/boot/dtbs"
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir/usr/share/kernel/$_flavor/kernel.release"
+
+	install -Dm644 "$builddir/arch/$_carch/boot/Image" \
+		"$pkgdir/boot/vmlinuz"
+}
+
+sha512sums="
+41bc63446fcd6d9bb920e4960f6de394aa1e44f9635ef8a8671c47b0890a6baa81b65f05f846b8fc3396146b9d29a2aad5bc651c2575e3c31701af690971a63e  linux-for-next.tar.gz
+f98cdb219e16fa9c4ed99e53858ac2bccba7406b5c0c36e350b8023fd8d1a1f5553f8b191be99b34d97bd354bb4645a97778c40cffbac42f35823f34cd139bfd  exynos9610.config
+ab54299bab5a486dbdc70231ec67e6ea463d1c804189fffdd33762e71e6991f8ecac047709fbc41aef344c4e819ed43b79b951837af5595923fcdaa7fe71c96f  0001-bring-in-simplefb-earlycon.patch
+7ae8a0dab780b099d7b1b262a38a2c76013d1c853ba7a26d27112e5b43852af49a395578ba232005cbeb99a34386be24c0493d092410ed1d91d2c3089e56c6b0  0002-video-fbdev-earlycon-Fix-compile-warning.patch
+b85b4648f66e8db741d021f1028bff61e493b04d6b58e74f646cac593874d45e5e76dbb131a54bf9f62f684e706aa24b3c54239fc974c1ec65aa44c1f5a150b0  0003-fbdev-earlycon-Protect-screen_info-struct.patch
+aead9eaa62a32661f86b13bc7c5d1182e4133c03cf6f5839eeb87bc8b3caa529b280be318ce66c1b1c01469fe6a4b135f9e92b1b66d577ec90eb356755d0e700  0004-fbdev-earlycon-Pass-NULL-to-get_default_font.patch
+d2117452f78d553c702940f34bf7267e880c230189067bf06c59fbcf124af5456c6f99ef0f6f969c37cc08aecbe92eb22dfc8686ab46788015f4d415d73ab8f7  0001-dt-bindings-clock-samsung-Add-Exynos9610-CMU-binding.patch
+ee721526db4f3195629588b0e7b6c5ed5380941e3349356dbc34a7ebfe365a10708d6d6d51d25484d49722f40562016fa8d6589d81b52b175ef92510597143dc  0002-clk-samsung-clk-pll-Add-support-for-pll_1061x.patch
+d1808ec607a0b65d649fa897db8cc6fee5171bb5e107091d8ce7c5eb835e214c02c630797e2233142467e4ae1b0435e26c4401262600fd78e1759aa3e9f8df72  0003-WIP-clk-samsung-clk-pll-Add-support-for-pll_1054x.patch
+b5b573e072aee9e6ca6263c1b08390cf6051a2d9795d3f5bc10193bad880749fd2a1dc65ebff2dde8a368394297e943786c48f7faab0f26dd66b9c65c0b0f71e  0004-clk-samsung-Introduce-Exynos9610-clock-controller-dr.patch
+eb3406f396e647b5167f62c2058955a76ced259a8122290fee1394e96275363484c54ab38e533e770372a10d49da24f595cc6e77eba83bd15acb2023ae58c76c  0005-dt-bindings-soc-exynos-sysreg-Add-Exynos9610-SYSREG-.patch
+43cb146ca79b4a9af7b6a34d63818368c1dd4a28782031dea1ad45aa4fc2ba0f151c78a9a42ec429e9991b8e686c1e36f82c6ef8e34bf3d2032348208446eaed  0006-dt-bindings-arm-samsung-Document-gta4xl-board-bindin.patch
+525e23526707375e80ed72c22002f9ed07327b6a079b79a8a060d0a8a6a15f8061adad53a5f0dfc8c7b34bd6b549e6fe4cc3b1854c4250984f38e1d8e7f19bfa  0007-MAINTAINERS-Add-entry-for-Samsung-Exynos9610-SoC.patch
+8e5862f06d42de2fd866134a084d7a7544ceb355deeaca4bd67974b201851c715f36236b8a0e9b73d1f09e4058eb64cb0aadb0166443eeaf5fba541e0509e3b0  0008-arm64-dts-exynos-Add-initial-support-for-the-Exynos9.patch
+107707b390abdebc3d2419b94a5b6d196b30d5a9b64de3c286d3c03938abf2cb53b9ed99f9b7405861094296ceee7d78e8c87ab643c2d24911990a1958dc04c2  0009-arm64-dts-exynos-Add-initial-support-for-Samsung-Gal.patch
+"

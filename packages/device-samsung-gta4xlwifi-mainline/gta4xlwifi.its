@@ -1,0 +1,44 @@
+/dts-v1/;
+
+/ {
+	description = "gta4xl boot config";
+	#address-cells = <1>;
+
+	images {
+		kernel {
+			description = "Linux";
+			data = /incbin/("vmlinuz");
+			type = "kernel";
+			arch = "arm64";
+			os = "linux";
+			compression = "none";
+			load = <0x81000000>;
+			entry = <0x81000000>;
+		};
+
+		dtb {
+			data = /incbin/("/boot/dtbs/exynos/exynos9610-gta4xl.dtb");
+			type = "flat_dt";
+			arch = "arm64";
+		};
+
+		ramdisk {
+			data = /incbin/("initramfs");
+			type = "ramdisk";
+			compression = "none";
+			os = "linux";
+			arch = "arm64";
+		};
+	};
+
+	configurations {
+		default = "normal";
+
+		normal {
+			description = "Normal boot";
+			kernel = "kernel";
+			fdt = "dtb";
+			ramdisk = "ramdisk";
+		};
+	};
+};

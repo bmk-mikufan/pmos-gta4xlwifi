@@ -1,0 +1,41 @@
+# Reference: <https://postmarketos.org/devicepkg>
+maintainer=""
+pkgname=device-samsung-gta4xlwifi-mainline
+pkgdesc="Samsung Galaxy Tab S6 Lite (Wi-Fi) - Mainline kernel"
+pkgver=0
+pkgrel=0
+url="https://postmarketos.org"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	linux-samsung-exynos9610
+	u-boot-exynos9610
+	u-boot-tools
+	android-tools
+	dtc
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	modules-initfs
+	gta4xlwifi.its
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+	mkdir -p "$pkgdir/usr/share/u-boot/gta4xl/"
+	install -Dm644 "$srcdir/gta4xlwifi.its" \
+		"$pkgdir/usr/share/u-boot/gta4xl/"
+}
+
+sha512sums="
+dacc3d31482c840ea37b12141183f1e9dc0013ba565c016c898eaa7952f5cbe702c6d486bac80dd1443a79e9ffbe358098c113018599edabbddfc87446368025  deviceinfo
+d7dfaa1ac9dfb4d6aeaa8b6963b0149be82a5c4d5812f9105c563fda4bca37aaa112fd083acbcc613559a014ee374bec8688cba358172a66d65da64c4fae5ac7  modules-initfs
+bb66ea59afd046f653c1ddd284478af482e1da040e58d598d8a1015a3709daa84f758b966e3987fbac6d4de82c07d2cb840cf3c4a412e8d222e8e13ca8f19624  gta4xlwifi.its
+"

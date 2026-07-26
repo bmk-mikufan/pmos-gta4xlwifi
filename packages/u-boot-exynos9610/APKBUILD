@@ -1,0 +1,40 @@
+# Contributor:
+# Maintainer:
+pkgname=u-boot-exynos9610
+pkgver=2026.01
+pkgrel=0
+pkgdesc="U-Boot for Exynos9610 devices"
+url="https://source.denx.de/u-boot/u-boot"
+arch="aarch64"
+license="GPL-2.0-or-later OFL-1.1 BSD-2-Clause BSD-3-Clause eCos-2.0 IBM-pibs
+	ISC LGPL-2.0-only LGPL-2.1-only X11"
+makedepends="$depends_dev bc dtc python3-dev swig bison flex openssl-dev gnutls-dev android-tools"
+options="!check !tracedeps pmb:cross-native"
+source="https://ftp.denx.de/pub/u-boot/u-boot-${pkgver}.tar.bz2 0001-exynos9610.patch"
+builddir="$srcdir/u-boot-${pkgver}/"
+
+prepare() {
+	default_prepare
+}
+
+build() {
+	make ARCH=arm gta4xl_defconfig
+	make ARCH=arm CC="${CC:-gcc}"
+}
+
+package() {
+	mkdir -p "${pkgdir}/usr/share/u-boot/gta4xl/"
+	install -Dm644 "${builddir}/u-boot.bin" \
+		"${pkgdir}/usr/share/u-boot/gta4xl/"
+	install -Dm644 "${builddir}/u-boot.dtb" \
+		"${pkgdir}/usr/share/u-boot/gta4xl/exynos9610-gta4xl-uboot.dtb"
+
+	mkdir -p "${pkgdir}/boot/dtbs/"
+	mkdtboimg create "${pkgdir}/boot/dtbs/exynos9610-gta4xl-uboot.img.dtb" \
+		--custom0=0x00000000 --custom1=0xff000000 "${builddir}/u-boot.dtb"
+}
+
+sha512sums="
+b1f988a497c77da60faf89ed33034e9ae58c4cd7f208e5ce451f1372e13540a66289bee4f08ca2f68f105d73f1ceae058b1f713db549edbcc885d9c66bdc4f8b  u-boot-2026.01.tar.bz2
+8be67f861f61ea9033c8d4cfaccd914cd3c836447265df089bf796623cff807290778a9f0280d677fcb36f561df970620c101b5cfac3e3ba789801b47ae5cedd  0001-exynos9610.patch
+"

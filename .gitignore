@@ -1,0 +1,11 @@
+*.dtb
+*.dtbo
+*.img
+*.gz
+*.zip
+*.o
+*.pyc
+__pycache__/
+blob/
+.output/
+.envkernel/

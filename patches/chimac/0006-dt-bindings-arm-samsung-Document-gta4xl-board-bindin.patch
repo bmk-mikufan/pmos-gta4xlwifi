@@ -1,0 +1,34 @@
+From 15a728964bd35571c55e0d71d8ba8cac70e583c1 Mon Sep 17 00:00:00 2001
+From: Alexandru Chimac <alex@chimac.ro>
+Date: Sun, 14 Sep 2025 20:43:56 +0000
+Subject: [PATCH 05/12] dt-bindings: arm: samsung: Document gta4xl board
+ binding
+
+Add binding for the Samsung Galaxy Tab S6 Lite (SM-P610/SM-P615)
+board.
+
+Signed-off-by: Alexandru Chimac <alex@chimac.ro>
+---
+ .../devicetree/bindings/arm/samsung/samsung-boards.yaml     | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/arm/samsung/samsung-boards.yaml b/Documentation/devicetree/bindings/arm/samsung/samsung-boards.yaml
+index 753b3ba1b607..9bf0bc5d1662 100644
+--- a/Documentation/devicetree/bindings/arm/samsung/samsung-boards.yaml
++++ b/Documentation/devicetree/bindings/arm/samsung/samsung-boards.yaml
+@@ -247,6 +247,12 @@ properties:
+               - samsung,starlte                 # Samsung Galaxy S9 (SM-G960F)
+           - const: samsung,exynos9810
+ 
++      - description: Exynos9610 based boards
++        items:
++          - enum:
++              - samsung,gta4xl # Samsung Galaxy Tab S6 Lite (SM-P610/P615)
++          - const: samsung,exynos9610
++
+       - description: Exynos990 based boards
+         items:
+           - enum:
+-- 
+2.51.0
+

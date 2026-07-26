@@ -1,0 +1,55 @@
+# Maintainer: bmk <bmk@bmk.kr>
+# Contributor: Alexandru Chimac <alex@chimac.ro>
+# This builds using the kernel and initramfs from the installed rootfs
+pkgname=uniloader-exynos9610
+pkgver=1.0
+pkgrel=0
+pkgdesc="Minimal bootloader for Exynos 9610/9611 devices"
+arch="aarch64"
+url="https://github.com/ivoszbg/uniLoader"
+license="GPL-2.0-only"
+options="!check !tracedeps pmb:cross-native"
+depends="linux-samsung-exynos9610"
+makedepends="
+	bash
+	clang
+	llvm
+	lld
+	findutils
+	linux-samsung-exynos9610
+"
+source="
+	uniLoader.git::git+https://github.com/ivoszbg/uniLoader.git
+	gta4xlwifi.dtb
+	gta4xlwifi.initramfs
+"
+
+builddir="$srcdir/uniLoader.git"
+
+prepare() {
+	default_prepare
+
+	# Copy kernel Image, DTB and ramdisk for embedding
+	mkdir -p blob
+	cp /boot/vmlinuz blob/Image
+	cp /boot/dtbs/exynos/exynos9610-gta4xl.dtb blob/dtb
+	cp /boot/initramfs blob/ramdisk
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="aarch64" LLVM=1 \
+		gta4xl_defconfig
+	make ARCH="aarch64" LLVM=1
+}
+
+package() {
+	install -Dm644 "$builddir"/uniLoader \
+		"$pkgdir"/usr/share/uniloader/gta4xl/
+}
+
+sha512sums="
+	SKIP
+	SKIP
+	SKIP
+"

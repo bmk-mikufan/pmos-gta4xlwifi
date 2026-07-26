@@ -1,0 +1,110 @@
+# Maintainer: grgergo <csakbek@freemail.hu>
+# Reference: <https://postmarketos.org/vendorkernel>
+# Kernel config based on: arch/arm64/configs/(CHANGEME!)
+
+pkgname=linux-samsung-gta4xlwifi
+pkgver=4.14.356
+pkgrel=0
+pkgdesc="Samsung Galaxy Tab S6 Lite kernel fork"
+arch="aarch64"
+_carch="arm64"
+_flavor="samsung-gta4xlwifi"
+url="https://kernel.org"
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+hostmakedepends=""
+	makedepends="
+	bash
+	bc
+	bison
+	devicepkg-dev
+	findutils
+	flex
+	openssl-dev
+	perl
+	linux-headers
+	android-tools
+	clang
+	binutils-aarch64
+"
+
+# Compiler: clang
+export CC="clang"
+export HOSTCC="clang"
+
+# Source
+_repository="android_kernel_samsung_gta4xl"
+_commit="df7598e4aabe7efc26c0a37871b8ee4d72dc8acb"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_commit.tar.gz::https://github.com/LineageOS/$_repository/archive/$_commit.tar.gz
+	$_config
+	attr_fmt_arg.patch
+	fix-check-lxdialog.patch
+	bt.patch
+	0001-SQUASH-HACK-DECON-framebuffer-fixes-for-Linux.patch
+	0001-fbdev-exynos-dpu20-Remove-one-of-samsung-debug-log.patch
+	exynos9611.cfg
+	gta4xlwifi.cfg
+	0002-abox-header-fix-redefined-param.patch
+"
+builddir="$srcdir/$_repository-$_commit"
+_outdir="out"
+
+prepare() {
+	default_prepare
+	REPLACE_GCCH=0 . downstreamkernel_prepare
+
+	# Remove -Werror from all makefiles
+	local i
+	local makefiles="$(find . -type f -name Makefile)
+	    $(find . -type f -name Kbuild)"
+	for i in $makefiles; do
+	    sed -i 's/-Werror-/-W/g' "$i"
+	    sed -i 's/-Werror//g' "$i"
+	done
+
+}
+
+build() {
+	unset LDFLAGS
+	make O="$_outdir" ARCH="$_carch" CC="${CC:-gcc}" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+}
+
+package() {
+	downstreamkernel_package "$builddir" "$pkgdir" "$_carch" \
+		"$_flavor" "$_outdir"
+
+	install -Dm644 "$_outdir"/arch/$_carch/boot/dts/exynos/exynos9610.dtb "$pkgdir"/boot/dtbs/exynos9610.dtb
+
+	# Generate DTB & DTBO
+	## DTB (apply configuration)
+	dtbdir="$_outdir"/arch/$_carch/boot/dts/exynos
+	mkdtboimg cfg_create \
+		"$pkgdir"/boot/dtbs/exynos9610.dtb \
+		"$srcdir"/exynos9611.cfg \
+		-d "$dtbdir"
+
+	## DTBO (create an image and apply configuration)
+	dtbodir="$_outdir"/arch/$_carch/boot/dts/samsung
+	mkdtboimg create "$pkgdir"/boot/dtbo.img --page_size=4096 \
+		"$dtbodir"/exynos9611-gta4xlwifi*.dtbo
+	mkdtboimg cfg_create \
+		"$pkgdir"/boot/dtbo.img \
+		"$srcdir"/gta4xlwifi.cfg \
+		-d "$dtbodir"
+}
+
+sha512sums="
+1c99d6fa65e37ffebcbe03cc86e1fbedbc52b706b6f53c5cabb827467af46cfb0b3fd1eff589faf712b5bb34163dd18e7c60749e99fdbc30cd89d80194655f06  linux-samsung-gta4xlwifi-df7598e4aabe7efc26c0a37871b8ee4d72dc8acb.tar.gz
+713a3c708d26dd4a1f3170d3986323194c5b7bed5b7bd87e35c3a25d1ddfbb627495598cdd126f1c00c58d0309ebb29f320469df0fd1fe6670bed698cb370553  config-samsung-gta4xlwifi.aarch64
+3d4981df4b7f98a3286958b77676bf933923ea906a66c93b78bb59843205e0f00638a51f8362357f93b76a00e4aa1b66720889a01a0d5efcb995bcf12cbb87f9  attr_fmt_arg.patch
+f748320ebe3e630b37977b6ea9f09498251cbf27368a7851b0a514853df6ad85da90cd282f62de1fbe95c551d91db82279be13611867263f4bc8aac3398aef82  fix-check-lxdialog.patch
+2aa1fe56f0d773cba0b17459602c84b69499d82c4ce551eeb5cf01963f63439843bfd779295fd4bde6ef59d4d8271d7544882e6ea8cd27344300ff4e01e76899  bt.patch
+ba1bf397e6ae63ff53aad715940d664fcbd0273ddbd9554c01171133f07627eadab2f174c408ebe4f25b92fcf66f1a3292b9928643e8599e7b1c28decbbed323  0001-SQUASH-HACK-DECON-framebuffer-fixes-for-Linux.patch
+93d43ca0d218729e60bd3256585a13ed6057881654147c2b84cab0423a5f8969c9566367b89226ddd153e7efa8f29878d0b7fc7c438ff02893bac15de1d41418  0001-fbdev-exynos-dpu20-Remove-one-of-samsung-debug-log.patch
+faf4a4719588c0e09c7b271a02760b22d7f8ec7a75445d20e7e0eed7e8c5ed960abcc2fd80ef553a41a8ff8d074e071a2154028b9f23cc3aafe6d154df86ac50  exynos9611.cfg
+f6604519b865a10e60693e379c900f78f51ed55b19d80d69e8a384fd28ae6dbf780dcb0a40f34026d6414b1132f401f262b7c1e58e1f8cb9334065a243ee3cd6  gta4xlwifi.cfg
+e7c60df18760e0579ceb5bd74405fb63ae4b0fba0ff7fe6d0d295c4743da5588fbb0550ba1c708a8ae6c93166e0fe98e176a22560101f0a07ca0ba834ac81273  0002-abox-header-fix-redefined-param.patch
+"
