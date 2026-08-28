@@ -1,0 +1,42 @@
+--- a/drivers/firmware/samsung/exynos-acpm.c	2026-07-13 16:21:44.000000000 +0900
++++ b/drivers/firmware/samsung/exynos-acpm.c	2026-08-29 01:58:20.621834942 +0900
+@@ -40,6 +40,12 @@
+ #define ACPM_TX_TIMEOUT_US		500000
+ 
+ #define ACPM_GS101_INITDATA_BASE	0xa000
++/*
++ * ✅ verified against the samsung-gta4xlwifi downstream (4.14) ACPM driver
++ * DT node (initdata-base = <0x6f00>;) and cross-checked live on-device via
++ * /sys/firmware/devicetree/base/acpm_ipc/initdata-base.
++ */
++#define ACPM_EXYNOS9610_INITDATA_BASE	0x6f00
+ 
+ /**
+  * struct acpm_shmem - shared memory configuration information.
+@@ -881,11 +887,26 @@
+ 	.acpm_clk_dev_name = "gs101-acpm-clk",
+ };
+ 
++/*
++ * No ACPM clock consumer wired up yet for exynos9610 (no
++ * exynos9610-acpm-clk driver exists). The platform device this name
++ * registers simply stays unprobed until one is added -- that is normal
++ * and harmless, not an error.
++ */
++static const struct acpm_match_data acpm_exynos9610 = {
++	.initdata_base = ACPM_EXYNOS9610_INITDATA_BASE,
++	.acpm_clk_dev_name = "exynos9610-acpm-clk",
++};
++
+ static const struct of_device_id acpm_match[] = {
+ 	{
+ 		.compatible = "google,gs101-acpm-ipc",
+ 		.data = &acpm_gs101,
+ 	},
++	{
++		.compatible = "samsung,exynos9610-acpm-ipc",
++		.data = &acpm_exynos9610,
++	},
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, acpm_match);

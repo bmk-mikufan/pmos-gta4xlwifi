@@ -1,0 +1,111 @@
+--- a/drivers/mailbox/exynos-mailbox.c
++++ b/drivers/mailbox/exynos-mailbox.c
+@@ -16,22 +16,49 @@
+ #include <linux/platform_device.h>
+ #include <linux/slab.h>
+ 
+-#define EXYNOS_MBOX_INTMR0		0x28	/* Interrupt Mask Register 0 */
+-#define EXYNOS_MBOX_INTGR1		0x40	/* Interrupt Generation Register 1 */
+-
+ #define EXYNOS_MBOX_INTMR0_MASK		GENMASK(15, 0)
+ #define EXYNOS_MBOX_INTGR1_MASK		GENMASK(15, 0)
+ 
+ #define EXYNOS_MBOX_CHAN_COUNT		HWEIGHT32(EXYNOS_MBOX_INTGR1_MASK)
+ 
+ /**
++ * struct exynos_mbox_drv_data - per-SoC doorbell register layout.
++ * @intmr0_offset:	offset of the Interrupt Mask Register 0.
++ * @intgr1_offset:	offset of the Interrupt Generation Register 1.
++ *
++ * The doorbell IP has been re-laid-out across Exynos generations; only the
++ * two registers this driver touches vary.
++ */
++struct exynos_mbox_drv_data {
++	u32 intmr0_offset;
++	u32 intgr1_offset;
++};
++
++static const struct exynos_mbox_drv_data gs101_mbox_data = {
++	.intmr0_offset = 0x28,
++	.intgr1_offset = 0x40,
++};
++
++/*
++ * ✅ verified against the samsung-gta4xlwifi downstream (4.14) ACPM IPC
++ * driver, drivers/soc/samsung/acpm/acpm_ipc.h: INTMR0/INTGR1 offsets for
++ * the Exynos9610 APM mailbox doorbell.
++ */
++static const struct exynos_mbox_drv_data exynos9610_mbox_data = {
++	.intmr0_offset = 0x10,
++	.intgr1_offset = 0x1c,
++};
++
++/**
+  * struct exynos_mbox - driver's private data.
+  * @regs:	mailbox registers base address.
+  * @mbox:	pointer to the mailbox controller.
++ * @data:	per-SoC register layout.
+  */
+ struct exynos_mbox {
+ 	void __iomem *regs;
+ 	struct mbox_controller *mbox;
++	const struct exynos_mbox_drv_data *data;
+ };
+ 
+ static int exynos_mbox_send_data(struct mbox_chan *chan, void *data)
+@@ -50,7 +77,8 @@
+ 		return -EINVAL;
+ 	}
+ 
+-	writel(BIT(msg->chan_id), exynos_mbox->regs + EXYNOS_MBOX_INTGR1);
++	writel(BIT(msg->chan_id),
++	       exynos_mbox->regs + exynos_mbox->data->intgr1_offset);
+ 
+ 	return 0;
+ }
+@@ -80,7 +108,8 @@
+ }
+ 
+ static const struct of_device_id exynos_mbox_match[] = {
+-	{ .compatible = "google,gs101-mbox" },
++	{ .compatible = "google,gs101-mbox", .data = &gs101_mbox_data },
++	{ .compatible = "samsung,exynos9610-mbox", .data = &exynos9610_mbox_data },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, exynos_mbox_match);
+@@ -97,6 +126,10 @@
+ 	if (!exynos_mbox)
+ 		return -ENOMEM;
+ 
++	exynos_mbox->data = of_device_get_match_data(dev);
++	if (!exynos_mbox->data)
++		return dev_err_probe(dev, -EINVAL, "Failed to get match data.\n");
++
+ 	mbox = devm_kzalloc(dev, sizeof(*mbox), GFP_KERNEL);
+ 	if (!mbox)
+ 		return -ENOMEM;
+@@ -110,7 +143,13 @@
+ 	if (IS_ERR(exynos_mbox->regs))
+ 		return PTR_ERR(exynos_mbox->regs);
+ 
+-	pclk = devm_clk_get_enabled(dev, "pclk");
++	/*
++	 * ❌ not confirmed whether the exynos9610 APM mailbox needs an
++	 * explicit gate clock (downstream's DT lists none for acpm_ipc, the
++	 * APM power domain is likely always-on) -- keep it optional instead
++	 * of guessing a clock ID.
++	 */
++	pclk = devm_clk_get_optional_enabled(dev, "pclk");
+ 	if (IS_ERR(pclk))
+ 		return dev_err_probe(dev, PTR_ERR(pclk),
+ 				     "Failed to enable clock.\n");
+@@ -126,7 +165,8 @@
+ 	platform_set_drvdata(pdev, exynos_mbox);
+ 
+ 	/* Mask out all interrupts. We support just polling channels for now. */
+-	writel(EXYNOS_MBOX_INTMR0_MASK, exynos_mbox->regs + EXYNOS_MBOX_INTMR0);
++	writel(EXYNOS_MBOX_INTMR0_MASK,
++	       exynos_mbox->regs + exynos_mbox->data->intmr0_offset);
+ 
+ 	return devm_mbox_controller_register(dev, mbox);
+ }

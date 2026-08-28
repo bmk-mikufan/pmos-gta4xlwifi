@@ -1212,7 +1212,7 @@ new file mode 100644
 index 000000000000..9ae2e741f2bf
 --- /dev/null
 +++ b/arch/arm64/boot/dts/exynos/exynos9610.dtsi
-@@ -0,0 +1,536 @@
+@@ -0,0 +1,612 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Samsung Exynos9610 common device tree
@@ -1497,6 +1497,44 @@ index 000000000000..9ae2e741f2bf
 +			clocks = <&cmu_apm CLK_GOUT_APM_SYSREG_PCLK>;
 +		};
 +
++		/*
++		 * ACPM alive-domain SRAM. Address/size (0x02039000, 84KB)
++		 * verified on-device via /proc/iomem ("acpm_ipc" resource)
++		 * and matches the initdata layout the downstream ACPM driver
++		 * uses (struct acpm_framework at SRAM + 0x6f00). Same base
++		 * address as gs101's apm_sram -- this SRAM window appears to
++		 * be a fixed convention across Exynos APM generations.
++		 */
++		apm_sram: sram@2039000 {
++			compatible = "mmio-sram";
++			reg = <0x02039000 0x15000>;
++			#address-cells = <1>;
++			#size-cells = <1>;
++			ranges = <0x0 0x02039000 0x15000>;
++		};
++
++		ap2apm_mailbox: mailbox@11900000 {
++			compatible = "samsung,exynos9610-mbox";
++			reg = <0x11900000 0x1000>;
++			interrupts = <GIC_SPI 38 IRQ_TYPE_LEVEL_HIGH>;
++			#mbox-cells = <0>;
++		};
++
++		firmware {
++			/*
++			 * ✅ ACPM core confirmed alive on-device: downstream
++			 * dmesg shows "Loading exynos9610_acpm_fvp.fw
++			 * firmware ... OK" / "plugin(id = 2) attach done!" --
++			 * this driver only talks to an already-running core,
++			 * it does not load/boot it.
++			 */
++			acpm_ipc: power-management {
++				compatible = "samsung,exynos9610-acpm-ipc";
++				mboxes = <&ap2apm_mailbox>;
++				shmem = <&apm_sram>;
++			};
++		};
++
 +		pinctrl_alive: pinctrl@11850000 {
 +			compatible = "samsung,exynos9610-pinctrl";
 +			reg = <0x11850000 0x1000>;
@@ -1637,6 +1675,44 @@ index 000000000000..9ae2e741f2bf
 +				      "dout_cmu_usb_dpgtc",
 +				      "dout_cmu_usb_usb30drd";
 +			samsung,sysreg = <&sysreg_usb>;
++		};
++
++		/*
++		 * USB2 (UTMI) DRD PHY. Downstream also has a combo USB3
++		 * usbdrd3_phy @131F0000/131E0000, but its SuperSpeed path is
++		 * isolated on this board (usb3phy-isolation, HS-only) --
++		 * left out until USB3 is actually needed.
++		 */
++		usbdrd_phy: phy@131d0000 {
++			compatible = "samsung,exynos9610-usbdrd-phy";
++			reg = <0x131d0000 0x200>;
++			clocks = <&cmu_usb CLK_GOUT_USB_USB30DRD_ACLK_PHYCTRL_20>,
++				 <&cmu_usb CLK_GOUT_USB_USB30DRD_REF_CLK>;
++			clock-names = "phy", "ref";
++			#phy-cells = <1>;
++			status = "disabled";
++		};
++
++		udc: usb@13200000 {
++			compatible = "samsung,exynos-dwusb";
++			clocks = <&cmu_usb CLK_GOUT_USB_USB30DRD_BUS_CLK_EARLY>;
++			clock-names = "hsdrd";
++			#address-cells = <1>;
++			#size-cells = <1>;
++			ranges;
++			status = "disabled";
++
++			usbdrd_dwc3: usb@13200000 {
++				compatible = "snps,dwc3";
++				reg = <0x13200000 0x10000>;
++				interrupts = <GIC_SPI 242 IRQ_TYPE_LEVEL_HIGH>;
++				phys = <&usbdrd_phy 0>;
++				phy-names = "usb2-phy";
++				dr_mode = "peripheral";
++				maximum-speed = "high-speed";
++				snps,dis_u2_susphy_quirk;
++				snps,dis-u2-freeclk-exists-quirk;
++			};
 +		};
 +
 +		cmu_fsys: clock-controller@13400000 {
