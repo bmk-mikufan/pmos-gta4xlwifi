@@ -18,7 +18,7 @@ deviceinfo_screen_height="2000"
 
 # Bootloader related
 deviceinfo_flash_method="heimdall-bootimg"
-deviceinfo_kernel_cmdline=""
+deviceinfo_kernel_cmdline="loglevel=8 ignore_loglevel initcall_debug"
 deviceinfo_generate_bootimg="true"
 deviceinfo_flash_pagesize="2048"
 deviceinfo_header_version="2"
