@@ -1,7 +1,11 @@
-From 3cdd00e7b904389497b74b87d5da25ccb174ed9d Mon Sep 17 00:00:00 2001
+From git@z Thu Jan  1 00:00:00 1970
+Subject: [PATCH v3 3/5] clk: samsung: clk-pll: Add support for pll_1061x
 From: Alexandru Chimac <alex@chimac.ro>
-Date: Thu, 20 Mar 2025 22:32:15 +0200
-Subject: [PATCH 01/12] clk: samsung: clk-pll: Add support for pll_1061x
+Date: Wed, 22 Jul 2026 23:44:04 +0300
+Message-Id: <20260722-exynos9610-clocks-v3-3-c672a2a30889@chimac.ro>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
 
 These PLLs are found in the Exynos9610 and Exynos9810 SoCs, and
 are similar to pll_1460x (using CON3 instead of CON1), so the code
@@ -14,7 +18,7 @@ Signed-off-by: Alexandru Chimac <alex@chimac.ro>
  2 files changed, 23 insertions(+), 7 deletions(-)
 
 diff --git a/drivers/clk/samsung/clk-pll.c b/drivers/clk/samsung/clk-pll.c
-index fdb84bcec912..b51ca1095c16 100644
+index e74552846ba3..2cda87235fa2 100644
 --- a/drivers/clk/samsung/clk-pll.c
 +++ b/drivers/clk/samsung/clk-pll.c
 @@ -781,15 +781,20 @@ static unsigned long samsung_pll46xx_recalc_rate(struct clk_hw *hw,
@@ -24,9 +28,9 @@ index fdb84bcec912..b51ca1095c16 100644
 -	pll_con1 = readl_relaxed(pll->con_reg + 4);
 -	mdiv = (pll_con0 >> PLL46XX_MDIV_SHIFT) & ((pll->type == pll_1460x) ?
 +	if (pll->type == pll_1061x)
-+		pll_con1 = readl_relaxed(pll->con_reg + 12);
++		pll_con1 = readl_relaxed(pll->con_reg + 0xc);
 +	else
-+		pll_con1 = readl_relaxed(pll->con_reg + 4);
++		pll_con1 = readl_relaxed(pll->con_reg + 0x4);
 +	mdiv = (pll_con0 >> PLL46XX_MDIV_SHIFT) & (((pll->type == pll_1460x)
 +				|| (pll->type == pll_1061x)) ?
  				PLL1460X_MDIV_MASK : PLL46XX_MDIV_MASK);
@@ -86,7 +90,7 @@ index fdb84bcec912..b51ca1095c16 100644
  
  	/* Wait for PLL lock */
  	return samsung_pll_lock_wait(pll, PLL46XX_LOCKED);
-@@ -1703,6 +1717,7 @@ static void __init _samsung_clk_register_pll(struct samsung_clk_provider *ctx,
+@@ -1700,6 +1714,7 @@ static void __init _samsung_clk_register_pll(struct samsung_clk_provider *ctx,
  	case pll_4650:
  	case pll_4650c:
  	case pll_1460x:
@@ -106,6 +110,7 @@ index d6eb3246611b..44f5e99d303d 100644
  	pll_0717x,
  	pll_0718x,
  	pll_0732x,
+
 -- 
-2.51.0
+2.54.0
 

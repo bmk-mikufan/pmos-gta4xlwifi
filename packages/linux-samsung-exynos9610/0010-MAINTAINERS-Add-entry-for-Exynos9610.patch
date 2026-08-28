@@ -1,0 +1,40 @@
+From git@z Thu Jan  1 00:00:00 1970
+Subject: [PATCH v3 5/5] MAINTAINERS: Add entry for Exynos9610
+From: Alexandru Chimac <alex@chimac.ro>
+Date: Wed, 22 Jul 2026 23:44:06 +0300
+Message-Id: <20260722-exynos9610-clocks-v3-5-c672a2a30889@chimac.ro>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Add maintainers entry for Samsung Exynos9610-based platforms.
+
+Signed-off-by: Alexandru Chimac <alex@chimac.ro>
+---
+ MAINTAINERS | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/MAINTAINERS b/MAINTAINERS
+index be843bf82036..68f3c4fe2913 100644
+--- a/MAINTAINERS
++++ b/MAINTAINERS
+@@ -24000,6 +24000,15 @@ L:	linux-samsung-soc@vger.kernel.org
+ S:	Maintained
+ F:	arch/arm64/boot/dts/exynos/exynos8855*
+ 
++SAMSUNG EXYNOS9610 SoC SUPPORT
++M:	Alexandru Chimac <alex@chimac.ro>
++L:	linux-arm-kernel@lists.infradead.org (moderated for non-subscribers)
++L:	linux-samsung-soc@vger.kernel.org
++S:	Maintained
++F:	Documentation/devicetree/bindings/clock/samsung,exynos9610-cmu.yaml
++F:	drivers/clk/samsung/clk-exynos9610.c
++F:	include/dt-bindings/clock/samsung,exynos9610-cmu.h
++
+ SAMSUNG EXYNOS ACPM MAILBOX PROTOCOL
+ M:	Tudor Ambarus <tudor.ambarus@linaro.org>
+ L:	linux-kernel@vger.kernel.org
+
+-- 
+2.54.0
+
