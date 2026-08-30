@@ -10,17 +10,15 @@ arch="aarch64"
 options="!check !archcheck"
 depends="
 	linux-samsung-exynos9610
+	uniloader-exynos9610
 	u-boot-exynos9610
-	u-boot-tools
 	android-tools
-	dtc
 	postmarketos-base
 "
-makedepends="devicepkg-dev"
+makedepends="devicepkg-dev dtc android-tools"
 source="
 	deviceinfo
 	modules-initfs
-	gta4xlwifi.its
 "
 
 build() {
@@ -29,13 +27,63 @@ build() {
 
 package() {
 	devicepkg_package $startdir $pkgname
+
+	# Samsung S-BOOT requires a DTBO-formatted (0xD7B7AB1E magic) blob with a
+	# real __symbols__ node in the boot.img v2 header DTB area, or its UFDT
+	# overlay-apply step fails outright ("No node __symbols__ in main dtb")
+	# regardless of which bootloader payload follows. A minimal hand-written
+	# stub dtb has no labels and thus no __symbols__, which does NOT satisfy
+	# this -- so we keep reusing u-boot-exynos9610's own
+	# exynos9610-gta4xl-uboot.img.dtb (wraps u-boot.dtb, which has real
+	# symbols) for this slot; only the boot.img *kernel* payload below is
+	# uniLoader.
+
+	# uniLoader already embeds the real kernel/dtb/initramfs inside itself
+	# (see uniloader-exynos9610), so the boot.img's own ramdisk slot would
+	# otherwise just be a wasted duplicate copy of the initramfs -- and the
+	# boot partition (~59M) can't fit uniloader.bin (~58M) *plus* that
+	# duplicate. Replace it with an empty stub; uniLoader never reads it.
 	mkdir -p "$pkgdir/usr/share/u-boot/gta4xl/"
-	install -Dm644 "$srcdir/gta4xlwifi.its" \
-		"$pkgdir/usr/share/u-boot/gta4xl/"
+	: > "$pkgdir/usr/share/u-boot/gta4xl/empty-initramfs"
+
+	# S-BOOT's UFDT engine unconditionally tries to apply a devicetree
+	# overlay from the separate `dtbo` flash partition onto the boot.img's
+	# main dtb, regardless of which kernel payload follows -- uniLoader
+	# itself ignores this entirely (it boots with its own embedded dtb;
+	# verified from its source: arch/aarch64/start.S overwrites x0 with its
+	# own linked-in blob/dtb before main() runs). The device's *stock*
+	# downstream dtbo.img references nodes (e.g. dsim_0, the display
+	# controller) our mainline dts doesn't have, so using it here makes the
+	# overlay fixup fail and blocks boot entirely. Ship a minimal,
+	# format-valid DTBO container with a no-op overlay (empty fragment) so
+	# S-BOOT's header check passes and there is nothing left to fix up.
+	#
+	# postmarketOS's deviceinfo/boot-deploy has no concept of a `dtbo`
+	# partition, so this is NOT auto-flashed by `pmbootstrap install` --
+	# after installing, flash it manually once:
+	#   fastboot flash dtbo boot/dtbo.img
+	# (only needs reflashing if the device's dtbo partition gets
+	# overwritten by something else, e.g. flashing the downstream/stock OS)
+	cat > "$srcdir"/empty-overlay.dts << 'EOF'
+/dts-v1/;
+/plugin/;
+
+/ {
+	fragment@0 {
+		target-path = "/";
+		__overlay__ {
+		};
+	};
+};
+EOF
+	dtc -@ -I dts -O dtb -o "$srcdir"/empty-overlay.dtbo "$srcdir"/empty-overlay.dts
+	mkdir -p "$pkgdir/boot"
+	mkdtboimg create "$pkgdir/boot/dtbo.img" --page_size=2048 \
+		--custom0=0x00000000 --custom1=0xff000000 \
+		"$srcdir"/empty-overlay.dtbo
 }
 
 sha512sums="
-dacc3d31482c840ea37b12141183f1e9dc0013ba565c016c898eaa7952f5cbe702c6d486bac80dd1443a79e9ffbe358098c113018599edabbddfc87446368025  deviceinfo
+8c17a93be7c49cc349e3cf8d9891a4817e374955d96a4e9e4f7dba7ec019a5438e5187e48daf445703753727b3a0124841ce6bde00f58149e9fca96bb0e7f116  deviceinfo
 d7dfaa1ac9dfb4d6aeaa8b6963b0149be82a5c4d5812f9105c563fda4bca37aaa112fd083acbcc613559a014ee374bec8688cba358172a66d65da64c4fae5ac7  modules-initfs
-bb66ea59afd046f653c1ddd284478af482e1da040e58d598d8a1015a3709daa84f758b966e3987fbac6d4de82c07d2cb840cf3c4a412e8d222e8e13ca8f19624  gta4xlwifi.its
 "

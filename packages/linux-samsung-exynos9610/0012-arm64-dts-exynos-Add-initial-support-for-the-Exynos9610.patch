@@ -1212,7 +1212,7 @@ new file mode 100644
 index 000000000000..9ae2e741f2bf
 --- /dev/null
 +++ b/arch/arm64/boot/dts/exynos/exynos9610.dtsi
-@@ -0,0 +1,612 @@
+@@ -0,0 +1,652 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Samsung Exynos9610 common device tree
@@ -1221,7 +1221,7 @@ index 000000000000..9ae2e741f2bf
 + */
 +
 +#include <dt-bindings/interrupt-controller/arm-gic.h>
-+#include <dt-bindings/clock/samsung,exynos9610-cmu.h>
++#include <dt-bindings/clock/samsung,exynos9610.h>
 +
 +/ {
 +	compatible = "samsung,exynos9610";
@@ -1428,7 +1428,7 @@ index 000000000000..9ae2e741f2bf
 +		sysreg_cpucl1: system-controller@10810000 {
 +			compatible = "samsung,exynos9610-cpucl1-sysreg", "syscon";
 +			reg = <0x10810000 0x10000>;
-+			/* clocks omitted: CMU_CPUCL1 has no driver in chimac's clocks v3 */
++			clocks = <&cmu_cpucl1 CLK_GOUT_CPUCL1_SYSREG_PCLK>;
 +		};
 +
 +		cmu_cpucl0: clock-controller@0x10900000 {
@@ -1560,6 +1560,46 @@ index 000000000000..9ae2e741f2bf
 +				mask = <0x00000100>;
 +				value = <0x0>;
 +			};
++		};
++
++		/*
++		 * S-BOOT arms this watchdog (CPUCL0 instance) before jumping to
++		 * the kernel; without a probed driver to service/disable it, it
++		 * fires an unconditional SoC reset a couple seconds into boot.
++		 * mainline's s3c2410_wdt driver stops the hardware watchdog
++		 * unconditionally at probe time (tmr_atboot defaults to off), so
++		 * getting this to probe is sufficient -- no userspace watchdog
++		 * daemon needed. Register/IRQ verified against the downstream
++		 * kernel's exynos9610.dts (watchdog_cl0@10050000); compatible
++		 * string is the closest upstream match for this SoC generation
++		 * (mainline has no exynos9610-specific compatible yet).
++		 */
++		watchdog: watchdog@10050000 {
++			compatible = "samsung,exynos7-wdt";
++			reg = <0x10050000 0x100>;
++			interrupts = <GIC_SPI 232 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cmu_peri CLK_GOUT_PERI_WDT_CLUSTER0_PCLK>, <&oscclk>;
++			clock-names = "watchdog", "watchdog_src";
++			samsung,syscon-phandle = <&pmu_system_controller>;
++		};
++
++		/*
++		 * Second watchdog instance (CPUCL1). Downstream's exynos9610.dts
++		 * has this as a separate device (watchdog_cl1@10060000, compatible
++		 * "samsung,exynos8-wdt" -- not an upstream compatible, with a
++		 * "use_multistage_wdt" quirk downstream's driver implements but
++		 * mainline's s3c2410_wdt does not). 🟡 Reusing exynos7-wdt here is
++		 * a guess: if S-BOOT arms both CPUCL0 and CPUCL1 watchdogs and only
++		 * CPUCL0 gets serviced, CPUCL1 could still fire a reset on its own.
++		 * Worst case this fails to probe cleanly and we're no worse off.
++		 */
++		watchdog_cl1: watchdog@10060000 {
++			compatible = "samsung,exynos7-wdt";
++			reg = <0x10060000 0x100>;
++			interrupts = <GIC_SPI 233 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&cmu_peri CLK_GOUT_PERI_WDT_CLUSTER1_PCLK>, <&oscclk>;
++			clock-names = "watchdog", "watchdog_src";
++			samsung,syscon-phandle = <&pmu_system_controller>;
 +		};
 +
 +		cmu_cmgp: clock-controller@11c00000 {
@@ -1812,7 +1852,7 @@ index 000000000000..9ae2e741f2bf
 +		clock-frequency = <26000000>;
 +	};
 +
-+	reserved-memory {
++	reserved_memory: reserved-memory {
 +		#address-cells = <2>;
 +		#size-cells = <1>;
 +		ranges;

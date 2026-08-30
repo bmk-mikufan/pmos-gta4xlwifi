@@ -30,8 +30,20 @@ package() {
 		"${pkgdir}/usr/share/u-boot/gta4xl/exynos9610-gta4xl-uboot.dtb"
 
 	mkdir -p "${pkgdir}/boot/dtbs/"
+	# Wrap the actual mainline kernel devicetree (built with a forced dtc -@,
+	# so it has a __symbols__ node) instead of u-boot's own dtb, since Samsung
+	# S-BOOT's UFDT overlay step requires __symbols__ in the boot.img v2-header
+	# main dtb. This is pmb:cross-native (builds in the x86_64 native chroot),
+	# so an aarch64-only makedepend on linux-samsung-exynos9610 can't be
+	# satisfied here -- extract the dtb straight out of the already-built
+	# linux-samsung-exynos9610 .apk (a plain tar.gz, no execution/arch issue)
+	# instead of relying on a makedepend install or an ephemeral rootfs mount.
+	local _kernel_apk _dtb_tmp
+	_kernel_apk="$(ls -t /home/pmos/packages/pmos/aarch64/linux-samsung-exynos9610-*.apk | head -1)"
+	_dtb_tmp="$srcdir/exynos9610-gta4xl.dtb"
+	tar -xzf "$_kernel_apk" -O boot/dtbs/exynos/exynos9610-gta4xl.dtb > "$_dtb_tmp"
 	mkdtboimg create "${pkgdir}/boot/dtbs/exynos9610-gta4xl-uboot.img.dtb" \
-		--custom0=0x00000000 --custom1=0xff000000 "${builddir}/u-boot.dtb"
+		--custom0=0x00000000 --custom1=0xff000000 "$_dtb_tmp"
 }
 
 sha512sums="

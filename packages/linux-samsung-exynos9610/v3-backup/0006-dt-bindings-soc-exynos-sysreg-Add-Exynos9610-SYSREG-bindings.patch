@@ -1,0 +1,61 @@
+From git@z Thu Jan  1 00:00:00 1970
+Subject: [PATCH v3 2/5] dt-bindings: soc: exynos-sysreg: Add Exynos9610
+ SYSREG bindings
+From: Alexandru Chimac <alex@chimac.ro>
+Date: Wed, 22 Jul 2026 23:44:03 +0300
+Message-Id: <20260722-exynos9610-clocks-v3-2-c672a2a30889@chimac.ro>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Add bindings for SYSREG nodes (required for ACG), compatible with the
+standard syscon driver.
+
+Signed-off-by: Alexandru Chimac <alex@chimac.ro>
+Reviewed-by: Peter Griffin <peter.griffin@linaro.org>
+---
+ .../bindings/soc/samsung/samsung,exynos-sysreg.yaml  | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
+
+diff --git a/Documentation/devicetree/bindings/soc/samsung/samsung,exynos-sysreg.yaml b/Documentation/devicetree/bindings/soc/samsung/samsung,exynos-sysreg.yaml
+index fcdb9ffd2644..eb4194cadcd7 100644
+--- a/Documentation/devicetree/bindings/soc/samsung/samsung,exynos-sysreg.yaml
++++ b/Documentation/devicetree/bindings/soc/samsung/samsung,exynos-sysreg.yaml
+@@ -35,6 +35,16 @@ properties:
+               - samsung,exynos8895-fsys1-sysreg
+               - samsung,exynos8895-peric0-sysreg
+               - samsung,exynos8895-peric1-sysreg
++              - samsung,exynos9610-apm-sysreg
++              - samsung,exynos9610-cam-sysreg
++              - samsung,exynos9610-core-sysreg
++              - samsung,exynos9610-cpucl0-sysreg
++              - samsung,exynos9610-dispaud-sysreg
++              - samsung,exynos9610-fsys-sysreg
++              - samsung,exynos9610-g2d-sysreg
++              - samsung,exynos9610-g3d-sysreg
++              - samsung,exynos9610-peri-sysreg
++              - samsung,exynos9610-usb-sysreg
+               - samsung,exynos990-peric0-sysreg
+               - samsung,exynos990-peric1-sysreg
+               - samsung,exynosautov920-hsi0-sysreg
+@@ -107,6 +117,16 @@ allOf:
+               - samsung,exynos8895-fsys1-sysreg
+               - samsung,exynos8895-peric0-sysreg
+               - samsung,exynos8895-peric1-sysreg
++              - samsung,exynos9610-apm-sysreg
++              - samsung,exynos9610-cam-sysreg
++              - samsung,exynos9610-core-sysreg
++              - samsung,exynos9610-cpucl0-sysreg
++              - samsung,exynos9610-dispaud-sysreg
++              - samsung,exynos9610-fsys-sysreg
++              - samsung,exynos9610-g2d-sysreg
++              - samsung,exynos9610-g3d-sysreg
++              - samsung,exynos9610-peri-sysreg
++              - samsung,exynos9610-usb-sysreg
+               - samsung,exynos990-peric0-sysreg
+               - samsung,exynos990-peric1-sysreg
+     then:
+
+-- 
+2.54.0
+

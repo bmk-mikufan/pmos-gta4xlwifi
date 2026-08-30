@@ -61,8 +61,26 @@ prepare() {
 
 build() {
 	unset LDFLAGS
-	make ARCH="$_carch" LLVM=1 \
+	# No -j anywhere in this pmbootstrap setup (checked abuild.conf, no
+	# JOBS/MAKEFLAGS default) -- make builds serially otherwise, wasting
+	# the other cores on this machine. Capped well below nproc (12) --
+	# this machine only has ~7.5GB RAM and was already swapping heavily
+	# (9.7GB swap in use) before this build even started; -j12 with
+	# clang/lld got the whole build killed (likely OOM/thrash-induced).
+	local _j="-j4"
+	make ARCH="$_carch" LLVM=1 $_j \
 		KBUILD_BUILD_VERSION="$((pkgrel + 1 ))-postmarketOS"
+
+	# Force dtc's -@ (symbol table generation) for exynos9610-gta4xl.dtb only,
+	# via kbuild's per-target DTC_FLAGS_<target-stem> override (see
+	# scripts/Makefile.dtbs: "DTC_FLAGS += $(DTC_FLAGS_$(target-stem))").
+	# Without this the dtb has no __symbols__ node, and Samsung S-BOOT's UFDT
+	# overlay step fails outright: "No node __symbols__ in main dtb." dtc
+	# only builds -@ automatically for dtbs registered as an in-kernel-build
+	# overlay base (base-dtb-y), which this board's dtb is not.
+	make ARCH="$_carch" LLVM=1 $_j \
+		DTC_FLAGS_exynos9610-gta4xl=-@ \
+		dtbs
 }
 
 package() {
@@ -84,20 +102,20 @@ package() {
 
 sha512sums="
 41bc63446fcd6d9bb920e4960f6de394aa1e44f9635ef8a8671c47b0890a6baa81b65f05f846b8fc3396146b9d29a2aad5bc651c2575e3c31701af690971a63e  linux-for-next.tar.gz
-a9fb5b48f9ef3013611bab6d1fe30682445b21a97a40b994f38194784bfe7d3df957ecd3a825e615574439f3211b8fde1dab56bd41a932f86cc4f45a51bcbd96  exynos9610.config
+ccf082c0363deed2d897e16a1ee591d74db2918cf194f394107fc143ec0d0f6e62fff3b60ff56c2150546e7a95bb081e227873ce359e5773ab8170b7a72725a3  exynos9610.config
 ab54299bab5a486dbdc70231ec67e6ea463d1c804189fffdd33762e71e6991f8ecac047709fbc41aef344c4e819ed43b79b951837af5595923fcdaa7fe71c96f  0001-bring-in-simplefb-earlycon.patch
 7ae8a0dab780b099d7b1b262a38a2c76013d1c853ba7a26d27112e5b43852af49a395578ba232005cbeb99a34386be24c0493d092410ed1d91d2c3089e56c6b0  0002-video-fbdev-earlycon-Fix-compile-warning.patch
 b85b4648f66e8db741d021f1028bff61e493b04d6b58e74f646cac593874d45e5e76dbb131a54bf9f62f684e706aa24b3c54239fc974c1ec65aa44c1f5a150b0  0003-fbdev-earlycon-Protect-screen_info-struct.patch
 aead9eaa62a32661f86b13bc7c5d1182e4133c03cf6f5839eeb87bc8b3caa529b280be318ce66c1b1c01469fe6a4b135f9e92b1b66d577ec90eb356755d0e700  0004-fbdev-earlycon-Pass-NULL-to-get_default_font.patch
-916460fb6700038fb372873800e869698ca13f4fc547fa553425267973d0faff0dae22320e458fead5dc3d32539a4fd9c238a0c25a93e4b4df1a08ac9b407c8c  0005-dt-bindings-clock-samsung-Add-Exynos9610-CMU-bindings.patch
-e9da31404e76ced67e06d0d2556bdf6eb8b45a95f8b96a115b039fd7b4e7e971c8b294029e502e173c7ba2b2fe75b0074e6acfd48b0f2b45443c94d2128f936e  0006-dt-bindings-soc-exynos-sysreg-Add-Exynos9610-SYSREG-bindings.patch
+d2117452f78d553c702940f34bf7267e880c230189067bf06c59fbcf124af5456c6f99ef0f6f969c37cc08aecbe92eb22dfc8686ab46788015f4d415d73ab8f7  0005-dt-bindings-clock-samsung-Add-Exynos9610-CMU-bindings.patch
+eb3406f396e647b5167f62c2058955a76ced259a8122290fee1394e96275363484c54ab38e533e770372a10d49da24f595cc6e77eba83bd15acb2023ae58c76c  0006-dt-bindings-soc-exynos-sysreg-Add-Exynos9610-SYSREG-bindings.patch
 fa805902e3f30da15c8598803251f13142ff792b49e16544f11ef65751403736fea85daf65cfbb22311ccdf7abdff6435825d74005709e194c8fdd4369b5c8ee  0007-clk-samsung-clk-pll-Add-support-for-pll_1061x.patch
 d1808ec607a0b65d649fa897db8cc6fee5171bb5e107091d8ce7c5eb835e214c02c630797e2233142467e4ae1b0435e26c4401262600fd78e1759aa3e9f8df72  0008-WIP-clk-samsung-clk-pll-Add-support-for-pll_1054x.patch
-3fd2e7a12006ad0d9b65bb9f71de0d1ae487a5c966327df3a25208deffd54444ad5a9a59afd4a8999249c0e85790b31446b0881418afc83cca9895bd25c367bf  0009-clk-samsung-Introduce-Exynos9610-clock-controller-driver.patch
+b5b573e072aee9e6ca6263c1b08390cf6051a2d9795d3f5bc10193bad880749fd2a1dc65ebff2dde8a368394297e943786c48f7faab0f26dd66b9c65c0b0f71e  0009-clk-samsung-Introduce-Exynos9610-clock-controller-driver.patch
 46997e8fafbe0cbd5963d15d9b121ecaefeffacb395a10bc2f55835c9b7b45f54267a5a667d567ed2287398530d7384e23daca338d55a9997c341938bb8d98ff  0010-MAINTAINERS-Add-entry-for-Exynos9610.patch
 43cb146ca79b4a9af7b6a34d63818368c1dd4a28782031dea1ad45aa4fc2ba0f151c78a9a42ec429e9991b8e686c1e36f82c6ef8e34bf3d2032348208446eaed  0011-dt-bindings-arm-samsung-Document-gta4xl-board-binding.patch
-d8c9d529d932d8c3f62b0f0c561750985aa89d6cd1a3fbae6165d35a5888df9ac3f050c8afa950002a04a1fac5a0cafd2d0c8ddb94bd4b0fb4e2ffe2943206d1  0012-arm64-dts-exynos-Add-initial-support-for-the-Exynos9610.patch
-107707b390abdebc3d2419b94a5b6d196b30d5a9b64de3c286d3c03938abf2cb53b9ed99f9b7405861094296ceee7d78e8c87ab643c2d24911990a1958dc04c2  0013-arm64-dts-exynos-Add-initial-support-for-Samsung-Galaxy.patch
+4f0c3c3946265d0ea74d2477fc171abc6b31f2e0c349c14dc1f7077ae6504fcdd74c88a2ca092f7e88e4ddcb76cc01a7ed768b0eacc16b6d0146ff29c50e568d  0012-arm64-dts-exynos-Add-initial-support-for-the-Exynos9610.patch
+879ba2d15f1786d51218083de340ca9493e63eddd950c8e7cea9cd73ccefd702ee185fab73ca7161ede5b95a960c3d8d82fd41c0736303c8915a8a60b5e8677b  0013-arm64-dts-exynos-Add-initial-support-for-Samsung-Galaxy.patch
 ee5fbe3ede5ede33a0cb923b1a44757f1a0ae20849a858c768470a76fe81e1f190dc15cd41893fe03af429e37c0541041863fe2b58366ab7351403abebb2ab03  0014-mailbox-exynos-mailbox-Add-per-SoC-doorbell-offsets.patch
 e2f7fd9ce706727dc80212508c6ed0b4e01a3f885d0d408123e11be37ea13b69670dcdeb7bd3967d40586f8f94779164f2a15e8c04cba6f7ff8947ec11e8bde2  0015-firmware-samsung-exynos-acpm-Add-Exynos9610-support.patch
 92f9dd3ce26af75dc6c6719d588fa2911e5d8253af4894a05894ad76a634c28436553c70568be1d1588787df8fbc693bd576acfd9730e7daa99ad6457389b11c  0016-phy-samsung-phy-exynos5-usbdrd-Add-Exynos9610-suppo.patch

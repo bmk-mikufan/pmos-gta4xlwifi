@@ -1,9 +1,8 @@
 # Maintainer: bmk <bmk@bmk.kr>
 # Contributor: Alexandru Chimac <alex@chimac.ro>
-# This builds using the kernel and initramfs from the installed rootfs
 pkgname=uniloader-exynos9610
 pkgver=1.0
-pkgrel=0
+pkgrel=5
 pkgdesc="Minimal bootloader for Exynos 9610/9611 devices"
 arch="aarch64"
 url="https://github.com/ivoszbg/uniLoader"
@@ -16,24 +15,32 @@ makedepends="
 	llvm
 	lld
 	findutils
-	linux-samsung-exynos9610
 "
 source="
-	uniLoader.git::git+https://github.com/ivoszbg/uniLoader.git
-	gta4xlwifi.dtb
+	uniLoader-master.tar.gz::https://github.com/ivoszbg/uniLoader/archive/refs/heads/master.tar.gz
 	gta4xlwifi.initramfs
 "
 
-builddir="$srcdir/uniLoader.git"
+builddir="$srcdir/uniLoader-master"
 
 prepare() {
 	default_prepare
 
-	# Copy kernel Image, DTB and ramdisk for embedding
+	# This is pmb:cross-native (builds in the x86_64 native chroot), so an
+	# aarch64-only makedepend on linux-samsung-exynos9610 can't be satisfied
+	# here, and the /mnt/rootfs_<device> bind-mount pmbootstrap sets up
+	# during `pmbootstrap install` only exists transiently -- extract the
+	# kernel Image and the symbol-bearing devicetree straight out of the
+	# already-built linux-samsung-exynos9610 .apk (plain tar.gz) instead.
+	# The initramfs is vendored as a real source file (gta4xlwifi.initramfs,
+	# generated once via mkinitfs) since it can't be built standalone inside
+	# this cross-native chroot at all.
+	local _kernel_apk
+	_kernel_apk="$(ls -t /home/pmos/packages/pmos/aarch64/linux-samsung-exynos9610-*.apk | head -1)"
 	mkdir -p blob
-	cp /boot/vmlinuz blob/Image
-	cp /boot/dtbs/exynos/exynos9610-gta4xl.dtb blob/dtb
-	cp /boot/initramfs blob/ramdisk
+	tar -xzf "$_kernel_apk" -O boot/vmlinuz > blob/Image
+	tar -xzf "$_kernel_apk" -O boot/dtbs/exynos/exynos9610-gta4xl.dtb > blob/dtb
+	cp "$srcdir"/gta4xlwifi.initramfs blob/ramdisk
 }
 
 build() {
@@ -45,11 +52,10 @@ build() {
 
 package() {
 	install -Dm644 "$builddir"/uniLoader \
-		"$pkgdir"/usr/share/uniloader/gta4xl/
+		"$pkgdir"/usr/share/u-boot/gta4xl/uniloader.bin
 }
 
 sha512sums="
-	SKIP
-	SKIP
-	SKIP
+09c6aa2b2c53963554826cd2f908aca8fc9211dc2edc1f3c9ee3c04bcb45c260b19e9a265a6b74edfbca025231d4f90ba9443ecfd95c064707c9fac99157889c  uniLoader-master.tar.gz
+d6e15ba45167fe25831ce040da57ed482c229a76fc02ae2254245bc730b16bcfd9941dd92959924b1f4dd2dda489915078c66a5c2c77747b71285a4af86905b8  gta4xlwifi.initramfs
 "
