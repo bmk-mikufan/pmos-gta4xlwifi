@@ -44,3 +44,14 @@ nohup pmbootstrap build linux-samsung-exynos9610 --force > /tmp/k.log 2>&1 < /de
 ```sh
 sudo pkill -9 -f qemu-aarch64-static
 ```
+
+## boot.img 만들기
+
+```sh
+pmbootstrap install --zap --password <pw>
+```
+
+`--password` 없이 돌리면 rootfs `user` 계정 비밀번호를 대화형으로 묻다가
+비대화형 실행에서는 그냥 죽는다. 산출물은
+`~/.local/var/pmbootstrap/chroot_rootfs_samsung-gta4xlwifi-mainline/boot/`의
+`boot.img` / `dtbo.img`.

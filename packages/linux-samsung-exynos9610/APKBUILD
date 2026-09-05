@@ -10,6 +10,12 @@ _carch="arm64"
 _flavor="samsung-exynos9610"
 url="https://kernel.org"
 license="GPL-2.0-only"
+# !tracedeps: abuild scans the built aarch64 package against an aarch64
+# root, which does not exist on the `pmbootstrap build --envkernel` path
+# (that runs in the native chroot) -- it fails with "Unable to open root".
+# Kernel packages have no shared-library deps to trace anyway, which is
+# why upstream pmaports kernel APKBUILDs all carry these options.
+options="!check !strip !tracedeps"
 makedepends="
 	bash
 	bc
