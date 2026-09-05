@@ -1212,7 +1212,7 @@ new file mode 100644
 index 000000000000..9ae2e741f2bf
 --- /dev/null
 +++ b/arch/arm64/boot/dts/exynos/exynos9610.dtsi
-@@ -0,0 +1,652 @@
+@@ -0,0 +1,703 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Samsung Exynos9610 common device tree
@@ -1859,6 +1859,57 @@ index 000000000000..9ae2e741f2bf
 +
 +		abox_rmem: abox@e9400000 {
 +			reg = <0x0 0xe9400000 0x2800000>;
++			no-map;
++		};
++
++		/*
++		 * Regions the Samsung firmware still owns at runtime and that
++		 * downstream reserves (exynos9610-rmem.dtsi). Without these the
++		 * page allocator hands them out and Linux and firmware scribble
++		 * over each other.
++		 */
++		sec_debug_magic_rmem: sec-debug-magic@80000000 {
++			reg = <0x0 0x80000000 0x1000>;
++			no-map;
++		};
++
++		seclog_rmem: seclog@c0000000 {
++			reg = <0x0 0xc0000000 0x80000>;
++			no-map;
++		};
++
++		cp_rmem: modem@ed000000 {
++			reg = <0x0 0xed000000 0x8a00000>;
++			no-map;
++		};
++
++		cp_log_rmem: modem-log@f5a00000 {
++			reg = <0x0 0xf5a00000 0x1e00000>;
++			no-map;
++		};
++
++		/*
++		 * Debug-snapshot (DSS), 0xf9000000..0xfa710000. Split around the
++		 * pstore slot at 0xf9d10000, which the board dts reuses for
++		 * ramoops and which therefore has to stay mapped.
++		 */
++		dss_rmem: debug-snapshot@f9000000 {
++			reg = <0x0 0xf9000000 0xd10000>;
++			no-map;
++		};
++
++		dss_kevents_rmem: debug-snapshot@f9f10000 {
++			reg = <0x0 0xf9f10000 0x800000>;
++			no-map;
++		};
++
++		gnss_rmem: gnss@fb000000 {
++			reg = <0x0 0xfb000000 0x800000>;
++			no-map;
++		};
++
++		chub_rmem: chub@fd000000 {
++			reg = <0x0 0xfd000000 0x80000>;
 +			no-map;
 +		};
 +	};

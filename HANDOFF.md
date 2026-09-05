@@ -135,6 +135,32 @@ adb pull /sys/fs/pstore/console-ramoops-0
 (`dmesg-ramoops`는 panic이 나야 생기므로 없을 것이다. `pmsg`는 이 커널에 `CONFIG_PSTORE_PMSG`가
 꺼져 있어 `/dev/pmsg0`가 아예 없다 — 확인됨 ✅)
 
+### (A-2) reserved-memory 누락 — 2026-09-06 신규, 현재 1순위 가설 ★
+다운스트림 `exynos9610-rmem.dtsi` + 실기기 `last_kmsg`를 대조한 결과, **메인라인 DTS가
+펌웨어가 런타임에 계속 쓰는 영역들을 리눅스 페이지 할당자에 그대로 넘기고 있었다.** ✅
+
+| 영역 | 주소 | 메인라인 상태(수정 전) |
+|---|---|---|
+| `sec_debug_magic` | `0x80000000` +0x1000 | 미예약 |
+| `seclog` (EL3 보안 로그) | `0xC0000000` +0x80000 | 미예약, usable RAM 한복판 |
+| `modem_if` (CP) | `0xED000000` +0x8A00000 | 미예약 |
+| `cp_ram_logging` | `0xF5A00000` +0x1E00000 | 미예약 |
+| debug-snapshot(DSS) | `0xF9000000`..`0xFA710000` | ramoops로 쓰는 pstore 슬롯 2MB만 예약 |
+| `gnss_if` | `0xFB000000` +0x800000 | 미예약 |
+| `chub_rmem` (센서허브) | `0xFD000000` +0x80000 | 미예약 |
+
+결정적으로 부팅 로그의 `software IO TLB: mapped [mem 0xfa000000-0xfe000000]` (64MB SWIOTLB)가
+**DSS kevents + gnss_if + chub_rmem 위에 그대로 얹혀 있다.** CHUB/GNSS/APM 같은 코프로세서는
+S-BOOT가 켜 둔 채로 리눅스와 무관하게 계속 돌기 때문에, 서로 메모리를 덮어쓰면 로그 한 줄 없이
+SoC가 리셋된다 — 지금 증상과 정확히 일치한다.
+
+또한 ramoops 주소 `0xF9D10000`은 우연이 아니라 다운스트림 DSS의 `log_pstore` 슬롯과 정확히
+같은 자리다(계산으로 확인 ✅). 즉 ramoops 배치 자체는 옳다.
+
+**조치**: `0012-...-Exynos9610.patch`의 `reserved-memory`에 위 영역들을 `no-map`으로 추가했다
+(2026-09-06). DSS는 ramoops 슬롯을 비켜 `0xf9000000+0xd10000` / `0xf9f10000+0x800000` 두 덩이로
+쪼갰다. `dtc` 컴파일까지는 검증했고 **실기기 테스트는 아직 안 했다.**
+
 ### (B) APM/ACPM 펌웨어의 AP 감시 (🟡 추정, 가장 유력)
 Exynos의 APM 코어에서 도는 ACPM 펌웨어는 AP가 살아있는지 감시한다. 다운스트림 리눅스는
 ACPM IPC로 주기적으로 핑을 보낸다. 메인라인은 안 보낸다 → 일정 시간 뒤 APM이 SoC를 리셋.
@@ -226,6 +252,9 @@ rsync -a --delete "$PM/<pkg>/" packages/<pkg>/
 1. 기기를 USB로 연결하고 살아 있는지 확인 (`lsusb`, Odin 모드는 `04e8:685d`).
 2. recovery로 들어가 `adb pull /sys/fs/pstore/console-ramoops-0` — **6장 (A) 실험**.
 3. 마지막 타임스탬프를 보고 시간 기반 / `/init` 기반을 가른 뒤 그에 맞춰 진행.
+4. reserved-memory 수정((A-2))이 들어간 커널을 빌드해서 플래시:
+   `nohup pmbootstrap build linux-samsung-exynos9610 --force > /tmp/k.log 2>&1 < /dev/null & disown`
+   (25~40분. `run_in_background`는 쓰지 말 것 — 8장 4번 참조)
 
 이미지 재생성이 필요하면 (재컴파일 불필요):
 ```sh
