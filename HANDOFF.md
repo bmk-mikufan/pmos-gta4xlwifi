@@ -28,10 +28,27 @@ Galaxy Tab S6 Lite Wi-Fi(SM-P610, Exynos 9611)에 메인라인 리눅스를 올�
 | 이 저장소 | 위 작업 트리의 **미러/백업**. `packages/`가 pmaports 쪽과 rsync로 동기화된다 |
 | 상류 협업자 | Alexandru Chimac — clocks/pinctrl/USB 담당. 경계는 `docs/local/upstream.md` |
 
+### 파티션 크기 (fastbootd에서 실측 ✅, 2026-09-06)
+`fastboot getvar partition-size:<part>`로 확인:
+
+| 파티션 | 크기 |
+|---|---|
+| `boot` | `0x3B00000` = 61,865,984 B = **59.0 MiB** |
+| `dtbo` | `0x800000` = 8.0 MiB |
+
+다이어트 이전 boot.img가 57.5 MiB였으니 **여유가 1.47 MiB뿐이었다.** 추측하던 64 MiB가
+아니다. `CONFIG_FUNCTION_TRACER`(+2~3MB)를 켰으면 파티션을 넘겨서 플래시가 실패했을 것이다.
+config 다이어트로 Image가 46MB -> 29.4MB가 되면서 여유가 확보됐다.
+
+기기는 fastbootd로 붙는다 (`fastboot devices` -> `R54N900QNNR fastbootd`,
+`getvar product` -> `gta4xlwifi`). Odin/heimdall 없이 fastboot로 플래시 가능하다.
+
 ### 빌드 환경 제약 (중요)
-- 빌드 머신 RAM ~7.5GB, 스왑을 이미 ~9.7GB 쓰고 있다. 커널 `make -j12`면 OOM으로 죽는다.
-  → `packages/linux-samsung-exynos9610/APKBUILD`의 `build()`에서 **`-j4`로 고정**해 둠. 올리지 말 것.
-- 커널 풀빌드 25~40분. `abuild`는 매번 srcdir을 지우고 다시 푼다 → 증분 빌드 없음.
+- 빌드 머신 RAM 14GB, 16코어 (2026-09-06에 7.5GB에서 증설). APKBUILD의 `build()`는 `-j8`.
+- **풀빌드를 반복 작업에 쓰지 말 것.** `abuild`는 매번 srcdir을 지우고 다시 풀어서 DTS 한 줄만
+  고쳐도 30분이 걸린다. 대신 `scripts/kbuild.sh`(증분, `O=.output`) +
+  `pmbootstrap build --envkernel`을 쓴다 — DTS만이면 수 초, 포장 10초.
+  절차와 함정은 `scripts/README-build.md`.
 
 ---
 
