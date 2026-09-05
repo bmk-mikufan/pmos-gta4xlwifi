@@ -107,7 +107,7 @@ oops/panic 로그가 전혀 없다 = 소프트웨어 예외가 아니라 **외�
 | 하드웨어 워치독 (CPUCL0 `0x10050000` / CPUCL1 `0x10060000`) | ❌ 원인 아님 | 두 인스턴스 모두 DTS에 추가 → dmesg에 `watchdog inactive, reset disabled, irq disabled` 확인. 그래도 리셋 동일. (수정 자체는 옳으므로 유지) |
 | ACPM / mailbox 드라이버 | ❌ 원인 아님 | 해당 DT 노드를 `status = "disabled"`로 완전히 죽이고 재빌드해도 **동일 지점에서 동일하게** 리셋 |
 | genpd (power domain) | ❌ 원인 아님 | 트리에 등록된 power-domain provider 노드가 0개. `genpd_power_off_unused()`가 돌 대상이 없음 (로그 줄은 장식) |
-| chimac clocks 드라이버 v3 vs v1 | ❌ 원인 아님 | v1으로 되돌려 빌드/플래시했으나 **v1도 동일하게 리부팅** (2026-09-06 확인). v3 백업은 `packages/linux-samsung-exynos9610/v3-backup/` |
+| chimac clocks 드라이버 v3 vs v1 | ❌ 원인 아님 | v1으로 되돌려 빌드/플래시했으나 **v1도 동일하게 리부팅** (2026-09-06 확인). 원인이 아니므로 **LKML에 올라간 v3로 다시 복귀했다.** v1 백업은 `packages/linux-samsung-exynos9610/v1-backup/` |
 | dtbo/bootargs 전달 문제 | ✅ 해결됨 | 위 3장 참조. 이제 bootargs가 실제로 커널에 도달한다 |
 | initramfs에 `/init` 없음 | ✅ 해결됨 | 실제 pmbootstrap이 만든 initramfs를 `uniloader-exynos9610/gta4xlwifi.initramfs`로 vendoring |
 

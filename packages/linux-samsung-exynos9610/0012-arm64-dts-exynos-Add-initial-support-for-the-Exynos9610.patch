@@ -1221,7 +1221,7 @@ index 000000000000..9ae2e741f2bf
 + */
 +
 +#include <dt-bindings/interrupt-controller/arm-gic.h>
-+#include <dt-bindings/clock/samsung,exynos9610.h>
++#include <dt-bindings/clock/samsung,exynos9610-cmu.h>
 +
 +/ {
 +	compatible = "samsung,exynos9610";
@@ -1428,7 +1428,7 @@ index 000000000000..9ae2e741f2bf
 +		sysreg_cpucl1: system-controller@10810000 {
 +			compatible = "samsung,exynos9610-cpucl1-sysreg", "syscon";
 +			reg = <0x10810000 0x10000>;
-+			clocks = <&cmu_cpucl1 CLK_GOUT_CPUCL1_SYSREG_PCLK>;
++			/* clocks omitted: CMU_CPUCL1 has no driver in chimac's clocks v3 */
 +		};
 +
 +		cmu_cpucl0: clock-controller@0x10900000 {
