@@ -27,10 +27,12 @@ Exynos 9611 SoC 기반으로, Downstream (LineageOS 4.14.356)과 Mainline (linux
 ## 상태
 
 - Downstream 부팅: ✅ 완료 (XFCE4, WiFi 미작동)
-- Mainline 부팅: ✅ 성공 (debug shell + framebuffer)
-- USB DWC3: ❌ PHY probe 실패
-- UFS: 🟡 드라이버 추가됨 (테스트 필요)
+- Mainline 부팅: 🟡 `/init` 진입까지 도달, 직후 하드 리셋 (현재 유일한 블로커)
+- USB DWC3: ❌ DTS에 노드 없음 — 드라이버 등록만 되고 probe 안 됨
+- 저장장치(MMC/UFS): ❌ probe 없음
 - WiFi/GPU/터치: ❌ 미구현
+
+새로 작업을 이어받는다면 **[HANDOFF.md](HANDOFF.md)** 를 먼저 읽을 것.
 
 ## 출처
 
