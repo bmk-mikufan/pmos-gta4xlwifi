@@ -1212,7 +1212,7 @@ new file mode 100644
 index 000000000000..9ae2e741f2bf
 --- /dev/null
 +++ b/arch/arm64/boot/dts/exynos/exynos9610.dtsi
-@@ -0,0 +1,703 @@
+@@ -0,0 +1,741 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Samsung Exynos9610 common device tree
@@ -1560,6 +1560,29 @@ index 000000000000..9ae2e741f2bf
 +				mask = <0x00000100>;
 +				value = <0x0>;
 +			};
++
++			/*
++			 * Without this there is no way to reset the machine at
++			 * all: this board's psci node is PSCI v0.1, which has no
++			 * SYSTEM_RESET, and s3c2410_wdt's restart handler cannot
++			 * unmask the WDT reset because its exynos7 register
++			 * offsets do not match this PMU. reboot(2) then ends in
++			 * "Reboot failed -- System halted", which also costs us
++			 * the ramoops log (a hard power-off loses DRAM).
++			 *
++			 * SWRESET offset/value taken from the downstream kernel's
++			 * drivers/soc/samsung/exynos-reboot.c, which does
++			 * writel(0x1, pmu_base + 0x0400). Note exynos850 upstream
++			 * uses 0x3a00/0x2 -- that is a different PMU layout and
++			 * does not apply here.
++			 */
++			reboot: syscon-reboot {
++				compatible = "syscon-reboot";
++				regmap = <&pmu_system_controller>;
++				offset = <0x0400>; /* SWRESET */
++				mask = <0x1>;
++				value = <0x1>;
++			};
 +		};
 +
 +		/*
@@ -1726,21 +1749,36 @@ index 000000000000..9ae2e741f2bf
 +		usbdrd_phy: phy@131d0000 {
 +			compatible = "samsung,exynos9610-usbdrd-phy";
 +			reg = <0x131d0000 0x200>;
++			/*
++			 * "ref" is the PHY's reference clock and the driver only
++			 * accepts exact rates (exynos5_rate_to_clk): 9.6/10/12/
++			 * 19.2/20/24/26/50 MHz. CLK_GOUT_USB_USB30DRD_REF_CLK
++			 * resolves to 49968750 Hz here, which is rejected with
++			 * -EINVAL. The reference really is the 26 MHz crystal --
++			 * downstream's phy@131D0000 says phy_refclk = "oscclk".
++			 */
 +			clocks = <&cmu_usb CLK_GOUT_USB_USB30DRD_ACLK_PHYCTRL_20>,
-+				 <&cmu_usb CLK_GOUT_USB_USB30DRD_REF_CLK>;
++				 <&oscclk>;
 +			clock-names = "phy", "ref";
++			/* PHY_CTRL_USB20; matches downstream pmu_offset = <0x704> */
++			samsung,pmu-syscon = <&pmu_system_controller>;
 +			#phy-cells = <1>;
-+			status = "disabled";
 +		};
 +
++		/*
++		 * dwc3 wrapper. "samsung,exynos-dwusb" is not a compatible any
++		 * mainline driver matches -- dwc3-exynos only knows the
++		 * -dwusb3 names. exynos850 is the closest drvdata for this SoC
++		 * and wants exactly two clocks, "bus_early" and "ref".
++		 */
 +		udc: usb@13200000 {
-+			compatible = "samsung,exynos-dwusb";
-+			clocks = <&cmu_usb CLK_GOUT_USB_USB30DRD_BUS_CLK_EARLY>;
-+			clock-names = "hsdrd";
++			compatible = "samsung,exynos850-dwusb3";
++			clocks = <&cmu_usb CLK_GOUT_USB_USB30DRD_BUS_CLK_EARLY>,
++				 <&cmu_usb CLK_GOUT_USB_USB30DRD_REF_CLK>;
++			clock-names = "bus_early", "ref";
 +			#address-cells = <1>;
 +			#size-cells = <1>;
 +			ranges;
-+			status = "disabled";
 +
 +			usbdrd_dwc3: usb@13200000 {
 +				compatible = "snps,dwc3";

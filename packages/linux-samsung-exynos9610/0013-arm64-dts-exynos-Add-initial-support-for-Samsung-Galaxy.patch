@@ -59,7 +59,7 @@ index 000000000000..05c672eacde1
 +		#size-cells = <1>;
 +		ranges;
 +
-+		bootargs = "earlycon=simplefb,0xca000000,1200,2000 keep_bootcon pmos.debug-shell initcall_debug loglevel=8 ignore_loglevel";
++		bootargs = "earlycon=simplefb,0xca000000,1200,2000 keep_bootcon pmos.debug-shell initcall_debug loglevel=8 ignore_loglevel rd.info console=ttyGS0 console=tty0 clk_ignore_unused";
 +
 +		framebuffer0: framebuffer@ca000000 {
 +			compatible = "simple-framebuffer";

@@ -1,0 +1,84 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: bmk <bmk@bmk.kr>
+Date: Sat, 6 Sep 2026 04:55:00 +0900
+Subject: [PATCH] phy: samsung: phy-exynos5-usbdrd: Allow a per-SoC PMU enable
+ mask
+
+Taking the USB2 PHY out of isolation writes EXYNOS4_PHY_ENABLE (bit 0) to
+the PMU PHY control register. On Exynos9610 that is not enough: the
+downstream driver's DT gives pmu_mask = <0x3> and its
+exynos_usbdrd_utmi_phy_isol() writes that whole mask, so bit 1 has to be
+set as well.
+
+With only bit 0 set the PHY probes fine and a gadget binds to the dwc3
+UDC, but the link never comes up -- the host never enumerates and
+/sys/class/udc/13200000.usb/state stays "not attached" forever.
+
+Add a pmu_enable_mask to the SoC driver data, defaulting to the previous
+EXYNOS4_PHY_ENABLE behaviour when unset, and use GENMASK(1, 0) for
+Exynos9610.
+
+Signed-off-by: bmk <bmk@bmk.kr>
+---
+--- a/drivers/phy/samsung/phy-exynos5-usbdrd.c
++++ b/drivers/phy/samsung/phy-exynos5-usbdrd.c
+@@ -488,6 +488,11 @@
+ 	u32 pmu_offset_usbdrd0_phy;
+ 	u32 pmu_offset_usbdrd0_phy_ss;
+ 	u32 pmu_offset_usbdrd1_phy;
++	/*
++	 * Bits to set in the PMU PHY control register to take the PHY out of
++	 * isolation. Zero means the usual EXYNOS4_PHY_ENABLE alone.
++	 */
++	u32 pmu_enable_mask;
+ };
+ 
+ /**
+@@ -583,15 +588,16 @@
+ static void exynos5_usbdrd_phy_isol(struct phy_usb_instance *inst,
+ 				    bool isolate)
+ {
+-	unsigned int val;
++	struct exynos5_usbdrd_phy *phy_drd = to_usbdrd_phy(inst);
++	unsigned int mask, val;
+ 
+ 	if (!inst->reg_pmu)
+ 		return;
+ 
+-	val = isolate ? 0 : EXYNOS4_PHY_ENABLE;
++	mask = phy_drd->drv_data->pmu_enable_mask ?: EXYNOS4_PHY_ENABLE;
++	val = isolate ? 0 : mask;
+ 
+-	regmap_update_bits(inst->reg_pmu, inst->pmu_offset,
+-			   EXYNOS4_PHY_ENABLE, val);
++	regmap_update_bits(inst->reg_pmu, inst->pmu_offset, mask, val);
+ }
+ 
+ /*
+@@ -2113,6 +2119,15 @@
+  * dts (usbdrd_phy { pmu_offset = <0x704>; pmu_mask = <0x3>; };).
+  */
+ #define EXYNOS9610_PHY_CTRL_USB20		0x704
++/*
++ * Unlike the SoCs already supported here, taking the Exynos9610 USB2 PHY out
++ * of isolation needs bit 1 as well as EXYNOS4_PHY_ENABLE. The downstream
++ * driver writes both: its DT gives pmu_mask = <0x3> and
++ * exynos_usbdrd_utmi_phy_isol() writes that whole mask. With only bit 0 set
++ * the PHY probes and the gadget binds, but the link never comes up and the
++ * UDC stays in "not attached" forever.
++ */
++#define EXYNOS9610_PHY_ENABLE_MASK		GENMASK(1, 0)
+ 
+ /*
+  * ✅ tune values and register field mapping verified against the
+@@ -2154,6 +2169,7 @@
+ 	.phy_ops		= &exynos850_usbdrd_phy_ops,
+ 	.phy_tunes		= exynos9610_tunes,
+ 	.pmu_offset_usbdrd0_phy	= EXYNOS9610_PHY_CTRL_USB20,
++	.pmu_enable_mask	= EXYNOS9610_PHY_ENABLE_MASK,
+ 	.clk_names		= exynos5_clk_names,
+ 	.n_clks			= ARRAY_SIZE(exynos5_clk_names),
+ 	.core_clk_names		= exynos5_core_clk_names,
+-- 
+2.51.0
+

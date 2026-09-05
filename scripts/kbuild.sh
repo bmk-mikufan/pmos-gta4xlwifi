@@ -27,6 +27,13 @@ sudo mkdir -p "$chroot_dir/mnt/linux"
 if [ ! -e "$chroot_dir/mnt/linux/Kbuild" ]; then
 	sudo mount --bind "$KERNEL_TREE" "$chroot_dir/mnt/linux"
 fi
+# `pmbootstrap install --zap` wipes the native chroot, taking the toolchain
+# with it. apk add is idempotent and cheap, so just make sure every time.
+pmbootstrap -q chroot -- apk -q add \
+	abuild bash bc binutils bison clang diffutils elfutils-dev findutils flex \
+	g++ gmp-dev linux-headers lld llvm make mpc1-dev mpfr-dev openssl-dev \
+	pahole perl python3 sed >/dev/null
+
 mkdir -p "$KERNEL_TREE/.output"
 pmbootstrap -q chroot -- chown -R pmos:pmos /mnt/linux/.output
 
