@@ -1,0 +1,58 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: bmk <bmk@bmk.kr>
+Date: Fri, 2 Oct 2026 10:15:00 +0900
+Subject: [PATCH] phy: samsung: phy-exynos5-usbdrd: dump register readback for
+ USB bringup debug
+
+Temporary debug aid: after the exynos850 UTMI init sequence and after each
+PMU isolation update, print the actual register contents. This tells
+whether the init writes (VBUS force-valid, POR sequence, isolation mask)
+stick or vanish (ungated clock / power domain), which decides the next
+step of the gta4xlwifi USB bringup. Not for upstream.
+
+Signed-off-by: bmk <bmk@bmk.kr>
+---
+--- a/drivers/phy/samsung/phy-exynos5-usbdrd.c
++++ b/drivers/phy/samsung/phy-exynos5-usbdrd.c
+@@ -589,7 +589,7 @@
+ 				    bool isolate)
+ {
+ 	struct exynos5_usbdrd_phy *phy_drd = to_usbdrd_phy(inst);
+-	unsigned int mask, val;
++	unsigned int mask, val, rb;
+ 
+ 	if (!inst->reg_pmu)
+ 		return;
+@@ -598,6 +598,12 @@
+ 	val = isolate ? 0 : mask;
+ 
+ 	regmap_update_bits(inst->reg_pmu, inst->pmu_offset, mask, val);
++	regmap_read(inst->reg_pmu, inst->pmu_offset, &rb);
++	dev_info(phy_drd->dev, "usbdrd-phy PMU %#x %s: mask=%#x wrote=%#x readback=%#x\n",
++		 inst->pmu_offset, isolate ? "isolate" : "de-isolate",
++		 mask, val, rb);
++
++	regmap_update_bits(inst->reg_pmu, inst->pmu_offset, mask, val);
+ }
+ 
+ /*
+@@ -1626,6 +1632,19 @@
+ 	reg &= ~HSP_FSV_OUT_EN;
+ 	writel(reg, regs_base + EXYNOS850_DRD_HSP);
+ 
++	dev_info(phy_drd->dev, "usbdrd-phy readback: LINKCTRL=%#x LINKPORT=%#x UTMI=%#x HSP=%#x HSP_TEST=%#x CLKRST=%#x SSPPLLCTL=%#x (sw=%s extrefclk=%#x ss_ports=%#x)\n",
++		 readl(regs_base + EXYNOS850_DRD_LINKCTRL),
++		 readl(regs_base + EXYNOS850_DRD_LINKPORT),
++		 readl(regs_base + EXYNOS850_DRD_UTMI),
++		 readl(regs_base + EXYNOS850_DRD_HSP),
++		 readl(regs_base + EXYNOS850_DRD_HSP_TEST),
++		 readl(regs_base + EXYNOS850_DRD_CLKRST),
++		 readl(regs_base + EXYNOS850_DRD_SSPPLLCTL),
++		 phy_drd->sw ? "yes" : "no",
++		 phy_drd->extrefclk,
++		 (unsigned int)FIELD_GET(LINKPORT_HOST_NUM_U3,
++					 readl(regs_base + EXYNOS850_DRD_LINKPORT)));
++
+ 	if (ss_ports)
+ 		exynos5_usbdrd_usb_v3p1_pipe_override(phy_drd);
+ }
