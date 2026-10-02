@@ -4,9 +4,9 @@ Samsung Galaxy Tab S6 Lite Wi-Fi (SM-P610, Exynos 9611) → mainline Linux + pos
 부트로더는 uniLoader. 빌드는 Windows + WSL2.
 
 ## 현재 목표
-커널이 `/init` 진입 직후 하드 리셋되는 문제 해결. 이게 유일한 블로커다.
-**`HANDOFF.md`를 먼저 읽을 것** — 배제된 가설, 남은 가설, 다음 실험이 거기 있다.
-(ACPM/mbox/USB2 PHY 드라이버는 작성·빌드까지 끝났으나, 리셋 때문에 실기기 검증 불가.)
+디버그 셸까지 도달한 상태에서 **USB 가젯 호스트 열거** (`state=not attached`) 해결.
+다음은 PHY 레지스터 덤프 실측 — 추측-플래시 반복 금지.
+**`HANDOFF.md`를 먼저 읽을 것** — 10장에 최신 상태가 있다.
 
 ## 확신도 표기 — 반드시 지킬 것
 - ✅ 검증됨: 소스에서 직접 확인

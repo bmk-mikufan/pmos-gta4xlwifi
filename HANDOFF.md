@@ -1,6 +1,6 @@
 # HANDOFF — 새 에이전트 인수인계 문서
 
-최종 갱신: 2026-09-06
+최종 갱신: 2026-10-02 (9/6 심야 세션 반영. 1·4·6·7·9장 갱신, 10장 신규)
 
 이 문서 하나만 읽어도 작업을 이어받을 수 있도록 정리한 요약본이다.
 세부는 `CLAUDE.md`(작업 규칙), `docs/local/workflow.md`(전체 절차),
@@ -11,8 +11,8 @@
 ## 1. 한 줄 요약
 
 Galaxy Tab S6 Lite Wi-Fi(SM-P610, Exynos 9611)에 메인라인 리눅스를 올리는 중이다.
-커널은 **부팅에 성공해서 `/init`까지 도달하지만, `/init` 진입 직후 하드 리셋**된다.
-이 리셋의 원인이 현재 유일한 블로커다.
+2026-09-06 심야 세션에서 **`/init` 직후 하드 리셋은 더 이상 재현되지 않고 디버그 셸까지 도달**했다.
+현재 블로커는 **USB 가젯 호스트 열거 실패 (`state=not attached`)** — 10장 참조.
 
 ---
 
@@ -205,19 +205,16 @@ ACPM IPC로 주기적으로 핑을 보낸다. 메인라인은 안 보낸다 → 
 
 ```
 CLAUDE.md                     작업 규칙 (절대 규칙 7개 — 반드시 먼저 읽을 것)
-HANDOFF.md                    이 문서
+HANDOFF.md                    이 문서 (10장에 9/6 심야 세션 결과)
 README.md                     저장소 개요
 .claude/
   agents/                     source-digger, build-triage 서브에이전트 정의
   skills/                     kernel-tree, kconfig, qr-log 스킬
 packages/                     ★ pmaports 작업 트리의 미러 (메인라인)
-  linux-samsung-exynos9610/     패치 0001~0016 + exynos9610.config + APKBUILD
-    v3-backup/                  chimac clocks v3 (현재는 v1을 쓰는 중)
+  linux-samsung-exynos9610/     패치 0001~0017 + exynos9610.config + APKBUILD
   device-samsung-gta4xlwifi-mainline/   deviceinfo + no-op dtbo 생성
   uniloader-exynos9610/         uniLoader + vendored initramfs
-  u-boot-exynos9610/
 downstream/                   다운스트림(LineageOS 4.14) 패키지 — 부팅 성공한 쪽
-patches/chimac/               chimac의 LKML 패치 원본
 logs/                         실기기에서 뽑은 로그 (console-ramoops, last_kmsg)
 docs/
   포팅_작업_기록.md            ★ 날짜별 전체 작업 기록 (가장 상세)
@@ -225,9 +222,16 @@ docs/
   local/hardware.md            검증된 하드웨어 사실
   local/upstream.md            chimac 협업 경계
   local/findings/              날짜별 측정 결과
-  local/wiki/                  postmarketOS 위키 오프라인 사본
-scripts/
+scripts/                      ksetup.sh/kbuild.sh + README-build.md (증분 빌드)
 ```
+
+삭제된 것 (2026-10-02 정리, git history에 보존):
+`docs/local/wiki/` (오프라인 위키 사본 9개),
+`docs/pmos_*.md` 5개 (`docs/local/`과 중복),
+`patches/chimac/` (LKML 원본 — `packages/`의 17개 패치로 진화),
+`packages/u-boot-exynos9610/` (부트 체인은 uniLoader라 미사용),
+`packages/.../v1-backup/` (clocks v1 백업),
+`scripts/build-kernel.sh` (`kbuild.sh`로 대체).
 
 `packages/`를 고칠 때는 **pmaports 쪽이 원본**이다:
 ```sh
@@ -266,14 +270,49 @@ rsync -a --delete "$PM/<pkg>/" packages/<pkg>/
 
 ## 9. 지금 상태에서 바로 할 일
 
-1. 기기를 USB로 연결하고 살아 있는지 확인 (`lsusb`, Odin 모드는 `04e8:685d`).
-2. recovery로 들어가 `adb pull /sys/fs/pstore/console-ramoops-0` — **6장 (A) 실험**.
-3. 마지막 타임스탬프를 보고 시간 기반 / `/init` 기반을 가른 뒤 그에 맞춰 진행.
-4. reserved-memory 수정((A-2))이 들어간 커널을 빌드해서 플래시:
-   `nohup pmbootstrap build linux-samsung-exynos9610 --force > /tmp/k.log 2>&1 < /dev/null & disown`
-   (25~40분. `run_in_background`는 쓰지 말 것 — 8장 4번 참조)
+1. Releases에서 `boot-latest-20260906-0505.img` + `dtbo-20260906.img`를 받아
+   `fastboot flash boot` / `fastboot flash dtbo` 후 부팅 — 화면 디버그 셸 도달이 기대값.
+2. USB 열거 확인: 호스트에 `/dev/ttyACM*`가 뜨는지. 안 뜨면 10장의 UDC 상태 덤프 재확인.
+3. 다음 실험은 **PHY 레지스터 덤프 실측** (10장 마지막 항목). 추측-플래시 반복 금지.
+4. 반복 주기: `scripts/kbuild.sh dtbs`(수 초) → `pmbootstrap build --envkernel`
+   (10초) → `pmbootstrap install --zap` (3~4분). 풀빌드는 쓰지 말 것.
 
-이미지 재생성이 필요하면 (재컴파일 불필요):
-```sh
-nohup pmbootstrap install --zap > /tmp/inst.log 2>&1 < /dev/null & disown
-```
+## 10. 2026-09-06 심야 세션 결과 (이 HANDOFF 작성 이후 진행분)
+
+6장 (A) 실험 결과: 계측 전 빌드의 ramoops 마지막 타임스탬프 **9.92초**
+(`logs/console-ramoops-reset-9.9s.log`). 즉 리셋은 고정 타임아웃이 아니라
+**`/init` 도달이 방아쇠**였다. APM 감시 가설 (B)도 약화. reserved-memory 수정은
+SWIOTLB 재배치(`0xfa000000` → `0xe5400000`)까지 의도대로 먹었으나 리셋은 그대로라
+가설에서 배제 (수정은 유지).
+
+그 뒤 `set -x` 계측 initramfs를 넣은 빌드가 **디버그 셸까지 도달**했다. 커널은
+동일하고 initramfs만 달라서 (44,304,384 vs 44,300,288 B), `set -x` 타이밍 효과인지
+cpio 재포장 차이인지는 미확정. `~/gta4xlwifi/backup/2026-09-06_debugshell/`에 양쪽
+이미지·initramfs·apk·리셋 로그 보존.
+
+이후 확정된 것:
+- **재부팅 수단 없음 → 해결.** PSCI v0.1이라 `SYSTEM_RESET`이 없고 WDT restart도
+  9610 PMU 오프셋 불일치로 불발. 다운스트림 `exynos-reboot.c`에서 검증한
+  PMU SWRESET `0x0400`/`0x1` `syscon-reboot` 노드 추가로 `reboot: Restarting
+  system` 동작. warm 리셋이라 ramoops가 손상 없이 남는다.
+- **PSTORE_PMSG 동작.** `[pmOS-rd]:` 유저스페이스 줄이 ramoops에 들어온다.
+- **USB 컨트롤러 올라옴.** `usbdrd_phy`/`udc` `status disabled` 해제,
+  `compatible` → `samsung,exynos850-dwusb3`, refclk → `&oscclk` 26 MHz (드라이버가
+  49,968,750 Hz 거부), `samsung,pmu-syscon` 추가, `USB_LIBCOMPOSITE`/`CONFIGFS` +
+  `USB_G_SERIAL` + `U_SERIAL_CONSOLE` built-in. 결과:
+  `probe of 131d0000.phy returned 0`, `probe of 13200000.usb returned 0`,
+  `g_serial ready`, `PMOSDIAG udc=[13200000.usb]`.
+- **호스트 열거는 실패.** `state=not attached`, `current_speed=UNKNOWN`.
+  소스/실측으로 배제한 것: 클럭 게이팅 (`clk_ignore_unused`로도 동일),
+  role-switch 우회 (노드에 `orientation-switch` 없음),
+  PHY 레지스터 오프셋·VBUS valid 비트 정의 (다운스트림과 전부 일치),
+  PMU enable 마스크 (패치 0017, 효과 없음).
+- 빌드: config 다이어트로 심볼 4639 → 2716, Image ~46MB → 29.4MB (현재 ~31MB,
+  `g_serial` 포함). `boot` 파티션 실측 59.0 MiB 대비 여유 확보.
+  증분 `kbuild.sh` + `--envkernel`로 커널 45초 / 전체 사이클 5분.
+
+주의: 이 세션의 initramfs 진단 핵 (`set -x`, `PMOSMARK` 90초 auto-reboot 타이머,
+`PMOSDIAG` UDC/configfs 덤프, `rd.info`·`clk_ignore_unused` bootargs)은
+**재포장 테스트용이라 `packages/`·pmaports에 커밋되지 않았다.**
+재현하려면 `scripts/README-build.md` 절차로 initramfs를 풀어 `/init`에 삽입.
+`clk_ignore_unused`는 진단용이므로 장기 bootargs에 남기지 말 것.
