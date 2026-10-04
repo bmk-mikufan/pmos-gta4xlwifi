@@ -105,8 +105,10 @@ fastboot reboot
 - 리셋 후 recovery에서: `adb pull /sys/fs/pstore/console-ramoops-0`
 - 하드 전원 차단(볼륨키 강제종료)은 DRAM을 날려 ramoops를 잃는다. 금지.
 
-빌드 없이 바로 시험하려면 Releases의 이미지(`boot-0018-phy-regdump-20261002.img` 우선)를
-받아 위 순서대로 플래시하면 된다.
+빌드 없이 바로 시험하려면 Releases의 이미지(`boot-debugshell-20260906.img` 등)를
+받아 위 순서대로 플래시하면 된다. 덤프 포함 최신본(0018)은 릴리즈에 없으므로
+4장의 절차로 직접 빌드하거나, `gh auth login` 후
+`gh release upload boot-20260906-0505 boot-0018-phy-regdump-20261002.img`로 올린다.
 
 ## 6. vendored initramfs 안내
 

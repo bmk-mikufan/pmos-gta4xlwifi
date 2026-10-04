@@ -272,7 +272,9 @@ rsync -a --delete "$PM/<pkg>/" packages/<pkg>/
 
 ## 9. 지금 상태에서 바로 할 일
 
-1. Releases에서 `boot-0018-phy-regdump-20261002.img` + `dtbo-20260906.img`를 받아
+1. Releases에서 `boot-0018-phy-regdump-20261002.img` — 릴리즈 미업로드 상태이므로
+   SETUP.md 4장 절차로 직접 빌드하거나 `gh auth login` 후 업로드 — 와
+   `dtbo-20260906.img`를 받아
    `fastboot flash boot` / `fastboot flash dtbo` 후 부팅 — 화면 디버그 셸 도달이 기대값.
    이 이미지의 커널은 PHY init 직후 `usbdrd-phy readback:` 한 줄과 매 PMU 격리 변경마다
    `usbdrd-phy PMU ...` 한 줄을 kmsg에 남긴다 (패치 0018, upstream 제외용).

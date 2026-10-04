@@ -43,9 +43,11 @@ rsync -a --delete "$PM/<pkg>/" packages/<pkg>/
 - Downstream (4.14): ✅ 참조용으로 부팅 성공 (XFCE4, WiFi 미작동)
 
 부팅 이미지는 GitHub Releases (`boot-20260906-0505` 태그, 추적 대상 아님):
-`boot-0018-phy-regdump-20261002.img` (덤프 포함 최신·미검증 — 먼저 플래시할 것),
 `boot-debugshell-20260906.img` (디버그 셸 도달 확인본),
 `boot-latest-20260906-0505.img`, `dtbo-20260906.img` (dtbo는 전부 공통).
+`boot-0018-phy-regdump-20261002.img` (덤프 포함 최신)는 구 PC의 API 토큰 만료로
+미업로드 — 먼저 플래시할 이미지다. 새 PC에서 빌드(SETUP.md 4장, 첫 1회는 풀빌드
+~30분)하거나, `gh auth login` 후 릴리즈에 올리고 플래시할 것.
 
 ## 출처
 
