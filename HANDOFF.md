@@ -1,6 +1,6 @@
 # HANDOFF — 새 에이전트 인수인계 문서
 
-최종 갱신: 2026-10-02 (9/6 심야 세션 반영. 1·4·6·7·9장 갱신, 10장 신규)
+최종 갱신: 2026-10-04 (0018 덤프 빌드 완료·미플래시 상태 반영. 1·5·9장 갱신)
 
 이 문서 하나만 읽어도 작업을 이어받을 수 있도록 정리한 요약본이다.
 세부는 `CLAUDE.md`(작업 규칙), `docs/local/workflow.md`(전체 절차),
@@ -13,6 +13,8 @@
 Galaxy Tab S6 Lite Wi-Fi(SM-P610, Exynos 9611)에 메인라인 리눅스를 올리는 중이다.
 2026-09-06 심야 세션에서 **`/init` 직후 하드 리셋은 더 이상 재현되지 않고 디버그 셸까지 도달**했다.
 현재 블로커는 **USB 가젯 호스트 열거 실패 (`state=not attached`)** — 10장 참조.
+2026-10-02에 PHY 레지스터 readback 덤프 패치(0018)까지 넣고 빌드·부트 이미지 생성까지
+끝냈다. **플래시 + ramoops 회수가 다음 순서**다 (9장).
 
 ---
 
@@ -124,7 +126,7 @@ oops/panic 로그가 전혀 없다 = 소프트웨어 예외가 아니라 **외�
 | 하드웨어 워치독 (CPUCL0 `0x10050000` / CPUCL1 `0x10060000`) | ❌ 원인 아님 | 두 인스턴스 모두 DTS에 추가 → dmesg에 `watchdog inactive, reset disabled, irq disabled` 확인. 그래도 리셋 동일. (수정 자체는 옳으므로 유지) |
 | ACPM / mailbox 드라이버 | ❌ 원인 아님 | 해당 DT 노드를 `status = "disabled"`로 완전히 죽이고 재빌드해도 **동일 지점에서 동일하게** 리셋 |
 | genpd (power domain) | ❌ 원인 아님 | 트리에 등록된 power-domain provider 노드가 0개. `genpd_power_off_unused()`가 돌 대상이 없음 (로그 줄은 장식) |
-| chimac clocks 드라이버 v3 vs v1 | ❌ 원인 아님 | v1으로 되돌려 빌드/플래시했으나 **v1도 동일하게 리부팅** (2026-09-06 확인). 원인이 아니므로 **LKML에 올라간 v3로 다시 복귀했다.** v1 백업은 `packages/linux-samsung-exynos9610/v1-backup/` |
+| chimac clocks 드라이버 v3 vs v1 | ❌ 원인 아님 | v1으로 되돌려 빌드/플래시했으나 **v1도 동일하게 리부팅** (2026-09-06 확인). 원인이 아니므로 **LKML에 올라간 v3로 다시 복귀했다.** v1 백업은 git history에만 보존. |
 | dtbo/bootargs 전달 문제 | ✅ 해결됨 | 위 3장 참조. 이제 bootargs가 실제로 커널에 도달한다 |
 | initramfs에 `/init` 없음 | ✅ 해결됨 | 실제 pmbootstrap이 만든 initramfs를 `uniloader-exynos9610/gta4xlwifi.initramfs`로 vendoring |
 
@@ -270,12 +272,19 @@ rsync -a --delete "$PM/<pkg>/" packages/<pkg>/
 
 ## 9. 지금 상태에서 바로 할 일
 
-1. Releases에서 `boot-latest-20260906-0505.img` + `dtbo-20260906.img`를 받아
+1. Releases에서 `boot-0018-phy-regdump-20261002.img` + `dtbo-20260906.img`를 받아
    `fastboot flash boot` / `fastboot flash dtbo` 후 부팅 — 화면 디버그 셸 도달이 기대값.
-2. USB 열거 확인: 호스트에 `/dev/ttyACM*`가 뜨는지. 안 뜨면 10장의 UDC 상태 덤프 재확인.
-3. 다음 실험은 **PHY 레지스터 덤프 실측** (10장 마지막 항목). 추측-플래시 반복 금지.
-4. 반복 주기: `scripts/kbuild.sh dtbs`(수 초) → `pmbootstrap build --envkernel`
+   이 이미지의 커널은 PHY init 직후 `usbdrd-phy readback:` 한 줄과 매 PMU 격리 변경마다
+   `usbdrd-phy PMU ...` 한 줄을 kmsg에 남긴다 (패치 0018, upstream 제외용).
+2. 90초 뒤 자동 warm 리셋 후 recovery에서 `adb pull /sys/fs/pstore/console-ramoops-0`.
+   읽을 것: `readback:` 줄의 UTMI 비트 5(VBUS force-valid)와 HSP 비트 12·13,
+   `PMU 0x704 ... readback=` 값, `PMOSDIAG2` UDC 상태 6종.
+   - 쓰기 값 ≈ 읽기 값인데도 `not attached` → DWC3 풀업/세션 쪽(가설 2) 또는 tune 값(가설 3)
+   - 읽기 값이 0 또는 쓰기와 다름 → 전원/클럭 미인가(가설 1). power domain·게이트 추적
+3. 반복 주기: `scripts/kbuild.sh dtbs`(수 초) → `pmbootstrap build --envkernel`
    (10초) → `pmbootstrap install --zap` (3~4분). 풀빌드는 쓰지 말 것.
+   단 **새 패치 파일 추가는 트리 재생성(=풀빌드)을 강제**하므로, `.c` 실험은 트리를
+   직접 고치고 증분 빌드한 뒤 결과만 패치로 굳힐 것 (10/02에 30분 날린 교훈).
 
 ## 10. 2026-09-06 심야 세션 결과 (이 HANDOFF 작성 이후 진행분)
 

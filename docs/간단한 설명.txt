@@ -1,9 +1,0 @@
-현재 해외 개발자에게 gta4xl의 pmos 포팅이 완료된 소스를 받아왔다.
-이건 pmos 저장소에 커밋되지 않은 상태이다. 이제 이걸 내가 가지고 있는 gta4xlwifi에 포팅을 진행할 예정이다. 이 디렉토리의 .md 문서를 확인하고 포팅을 진행해라.
-gta4xl의 pmbootstrap 패키지는 현재 완전하며, 이를 참조해서 gta4xlwifi의 포팅 패키지를 구축해야 한다.
-이제 메인라인 진행함.
-
-내 git 저장소:https://github.com/bmk-mikufan/pmos-gta4xlwifi.git
-private이라, github cli로 클론해라.
-
-그리고 kconfig는 절대 직접 수정하면 안된다!!
