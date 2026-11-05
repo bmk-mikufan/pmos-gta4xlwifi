@@ -8,7 +8,7 @@
 | 커널 | `linux-for-next` 스냅샷 + 패치 18개 (`packages/linux-samsung-exynos9610/`) |
 | 부트로더 | [uniLoader](https://github.com/ivoszbg/uniLoader) (Samsung boot.img payload) |
 | 빌드 | Windows + WSL2, pmbootstrap |
-| 최종 갱신 | 2026-11-04 |
+| 최종 갱신 | 2026-11-05 |
 
 ---
 
@@ -43,8 +43,10 @@
 1·2는 PHY 레지스터 덤프로 반증되지 않는다. 상세·검증 방법:
 [`docs/local/findings/2026-11-04-usb-enum-hypotheses.md`](docs/local/findings/2026-11-04-usb-enum-hypotheses.md)
 
+**2026-11-05 수정**: 다운스트림 소스 대조로 PMU `0x704` **bit16(TCXO_USB 기준클럭 버퍼)** 누락을 찾아 0017 마스크에 추가 (`0x3` → `0x10003`). 실기기 미검증.
+
 **다음 순서**
-1. 패치 0018(PHY 레지스터 readback 덤프) 이미지 빌드 → 플래시 → `console-ramoops-0` 회수
+1. 0017(bit16) + 0018(PHY 레지스터 readback 덤프) 이미지 빌드 → 플래시 → `console-ramoops-0` 회수. `PMU ... readback=`에서 bit16 확인
 2. 같은 세션에서 다운스트림 기준값 확보: PHY/sysreg devmem, `regulator_summary`, SM5713 MUIC `i2cdump`
 
 ### 상류 현황 (2026-11-04 확인)
@@ -95,7 +97,7 @@ GitHub Releases `boot-20260906-0505` 태그:
 - `boot-latest-20260906-0505.img`
 - `dtbo-20260906.img` — 모든 boot 이미지 공통
 
-`boot-0018-phy-regdump-20261002.img`(최신, 덤프 포함)는 **미업로드** — SETUP.md 4장대로 빌드해야 한다 (첫 1회 풀빌드 ~30분).
+`boot-0018-phy-regdump-20261002.img`는 미업로드였고, 이제 0017 수정 이전 빌드라 **쓰지 말 것**. SETUP.md 4장대로 새로 빌드해야 한다 (첫 1회 풀빌드 ~30분).
 
 ## 출처
 

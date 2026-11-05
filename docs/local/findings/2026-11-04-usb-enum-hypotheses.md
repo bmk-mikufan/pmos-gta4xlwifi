@@ -62,3 +62,39 @@
   Krzysztof가 ABI 깨짐·TOP pinctrl 문제로 반대, v2 없음. 부팅에 무관 → 미적용.
 - **USB / 디스플레이 / MMC·UFS / gta4xl / 9611**: 상류 작업 없음. GitHub도 다운스트림 안드로이드 커널뿐.
 - **pmaports**: 업데이트 없음 (사용자 확인).
+
+## 추가 (2026-11-05): 다운스트림 소스 대조 결과
+
+출처: LineageOS `android_kernel_samsung_gta4xl` (lineage-23.2). 9610은 defconfig상
+`PHY_EXYNOS_USBDRD3=y` → `phy-exynos-usbdrd3.c` + CAL `phy-exynos-usb3p1.c` 경로 (✅).
+USB2 PHY 래퍼 레지스터 오프셋(LINKCTRL/CLKRST/UTMI/HSP/HSPPARACON/HSP_TEST/0x48)은
+메인라인 850 정의와 동일 (✅).
+
+### 적용함 — PMU 0x704 bit16 (TCXO_USB 기준클럭 버퍼)
+- ✅ 다운스트림 `exynos_usbdrd_utmi_phy_isol()` → `exynos_usbdrd_usb_txco_enable()`가
+  PMU 0x11860000+0x704 bit16(`ENABLE_TCXO_BUF_MASK`)을 un-isolate 시 set, isolate 시 clear.
+- ✅ 메인라인 0017 마스크는 `GENMASK(1,0)`뿐이었다 → `BIT(16) | GENMASK(1,0)`로 수정 (2026-11-05).
+- 🟡 이 비트가 꺼져 있으면 PHY 기준클럭이 없어 레지스터는 정상인데 PHY가 동작 안 하는 현 증상과 일치.
+- 확인: 0018의 `usbdrd-phy PMU ... readback=` 값에서 bit16이 1인지.
+
+### 미적용 차이 (🟡, bit16 결과를 본 뒤 하나씩)
+- CLKRST: 다운스트림은 POR high에서 b3|b2|b1 set, low에서 b3|b1만 clear (**PHY_RST_SEL b2 유지**). 메인라인 850 경로는 b2 미사용.
+- Q-channel: 다운스트림은 LINKCTRL DIS_QACT_* (b9~b12) set + FORCE_QACT 0→1 토글(500us 간격). 메인라인은 FORCE_QACT만.
+- init 시작 시 CLKRST b0 링크 SW 리셋 10us 펄스 — 메인라인 없음.
+- `usb3phy-isolation=1`이면 다운스트림은 pipe3 override(LINKCTRL b16/b18 set, b17 clear, 0x48 b4)를 항상 적용. 메인라인은 `ss_ports≠0`일 때만.
+- SSPPLLCTL(0x30) FSEL: 다운스트림 HS 경로는 안 씀. 메인라인은 씀 (영향 낮음).
+- dwc3 DT: 다운스트림은 `snps,dis-u2-freeclk-exists-quirk`만, `dis_u2_susphy_quirk`는 주석처리. 우리는 둘 다.
+
+### H1/H2 구체화
+- ✅ SM5713: MFD `i2c_1`@0x49, MUIC 서브 주소 0x25. 경로 `MANUAL_SW`(0x06) D-[5:3]/D+[2:0]
+  (0 open, 1 USB, 2 audio, 3 UART → USB=0x09). 수동/자동 `CFG1`(0x68) bit2 (1=manual).
+  다운스트림은 attach 시 MANUAL_SW=0x09 후 manual, shutdown 시 auto 복귀. 리셋 기본값 ❌ 미확인.
+  메인라인에서 쓰려면 9610 USI/I2C 노드가 먼저 필요.
+- ✅ PHY 전원: 다운스트림 dwc3 OTG가 gadget 시작 직전 S2MPU09 LDO12/13/14를 enable
+  (`ldo-names`). 셋 다 DT에 always-on/boot-on 없음 → 부트로더 상태 의존. 레일 매핑·전압 ❌.
+- ✅ 다운스트림에선 D+ 풀업이 PHY 호출이 아니라(`#if 0`) VBUS/BVALID 강제 + dwc3 RUN_STOP으로만 결정.
+  peripheral 고정인 메인라인은 MUIC/notifier attach 통지 의존이 없다.
+
+### 메인라인 참고
+- `exynos850-a217f.dts` (Galaxy A21s, 2026-09 머지): Samsung 폰, MUIC 드라이버 없이 USB 동작,
+  vdd10/vdd33 = `reg_dummy`, `dr_mode="otg"`, dwc3 quirk 없음.

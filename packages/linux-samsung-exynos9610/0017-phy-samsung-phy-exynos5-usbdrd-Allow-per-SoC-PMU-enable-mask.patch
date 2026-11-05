@@ -14,9 +14,13 @@ With only bit 0 set the PHY probes fine and a gadget binds to the dwc3
 UDC, but the link never comes up -- the host never enumerates and
 /sys/class/udc/13200000.usb/state stays "not attached" forever.
 
+The same downstream function also sets bit 16 (TCXO_USB reference clock
+buffer enable) of that register on un-isolate and clears it on isolate.
+Without it the PHY has no reference clock.
+
 Add a pmu_enable_mask to the SoC driver data, defaulting to the previous
-EXYNOS4_PHY_ENABLE behaviour when unset, and use GENMASK(1, 0) for
-Exynos9610.
+EXYNOS4_PHY_ENABLE behaviour when unset, and use BIT(16) | GENMASK(1, 0)
+for Exynos9610.
 
 Signed-off-by: bmk <bmk@bmk.kr>
 ---
@@ -55,7 +59,7 @@ Signed-off-by: bmk <bmk@bmk.kr>
  }
  
  /*
-@@ -2113,6 +2119,15 @@
+@@ -2113,6 +2119,20 @@
   * dts (usbdrd_phy { pmu_offset = <0x704>; pmu_mask = <0x3>; };).
   */
  #define EXYNOS9610_PHY_CTRL_USB20		0x704
@@ -66,12 +70,17 @@ Signed-off-by: bmk <bmk@bmk.kr>
 + * exynos_usbdrd_utmi_phy_isol() writes that whole mask. With only bit 0 set
 + * the PHY probes and the gadget binds, but the link never comes up and the
 + * UDC stays in "not attached" forever.
++ *
++ * Bit 16 enables the TCXO_USB reference clock buffer. Downstream
++ * exynos_usbdrd_utmi_phy_isol() calls exynos_usbdrd_usb_txco_enable(),
++ * which sets it on un-isolate and clears it on isolate, in the same
++ * register (ENABLE_TCXO_BUF_MASK, 0x10000).
 + */
-+#define EXYNOS9610_PHY_ENABLE_MASK		GENMASK(1, 0)
- 
++#define EXYNOS9610_PHY_ENABLE_MASK		(BIT(16) | GENMASK(1, 0))
+
  /*
   * ✅ tune values and register field mapping verified against the
-@@ -2154,6 +2169,7 @@
+@@ -2154,6 +2174,7 @@
  	.phy_ops		= &exynos850_usbdrd_phy_ops,
  	.phy_tunes		= exynos9610_tunes,
  	.pmu_offset_usbdrd0_phy	= EXYNOS9610_PHY_CTRL_USB20,
